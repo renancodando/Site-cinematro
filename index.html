@@ -3,178 +3,107 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#071014">
-  <meta name="description" content="NÃO CABE NA NOTA — ensaio cinematográfico sobre educação, desigualdade, trabalho e a ideia de medir uma vida por desempenho.">
-  <title>NÃO CABE NA NOTA — educação, trabalho e liberdade</title>
+  <meta name="theme-color" content="#171716">
+  <meta name="description" content="ENTRE O SINAL E O PONTO — uma experiência cinematográfica sobre educação, trabalho, produtividade e liberdade.">
+  <title>ENTRE O SINAL E O PONTO</title>
   <link rel="stylesheet" href="./style.css">
-  <link rel="stylesheet" href="./critica.css">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23071014'/%3E%3Cpath d='M10 17h44M10 31h31M10 45h23' stroke='%23eee7d9' stroke-width='3' stroke-linecap='round'/%3E%3Cpath d='m43 39 10 10m0-10L43 49' stroke='%23b85a4f' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23171716'/%3E%3Cpath d='M14 18h36v28H14z' fill='none' stroke='%23e8e2d7' stroke-width='2'/%3E%3Cpath d='M22 27h20M22 34h15' stroke='%23e8e2d7' stroke-width='2' stroke-linecap='round'/%3E%3Ccircle cx='47' cy='46' r='5' fill='%23a74e43'/%3E%3C/svg%3E">
   <script type="importmap">
     {
       "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"
+        "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js"
       }
     }
   </script>
 </head>
 <body>
   <div id="preloader" class="preloader" aria-live="polite">
-    <div class="preloader__mar" aria-hidden="true"><i></i><i></i><i></i></div>
-    <p>abrindo o caderno</p>
+    <div class="preloader__lampada" aria-hidden="true"><i></i></div>
+    <p>acendendo a sala</p>
     <span id="preloaderValue">0%</span>
   </div>
 
   <canvas id="cinema" aria-hidden="true"></canvas>
-  <canvas id="vestigios" aria-hidden="true"></canvas>
-  <div class="atmosfera" aria-hidden="true"></div>
-  <div class="grao" aria-hidden="true"></div>
-  <div class="margem-caderno" aria-hidden="true"></div>
+  <div class="filme" aria-hidden="true"></div>
+  <div class="vinheta" aria-hidden="true"></div>
 
   <header class="topo">
     <a class="marca" href="#inicio" aria-label="Voltar ao início">
-      <span class="marca__risco" aria-hidden="true"></span>
-      <span>NÃO CABE NA NOTA</span>
+      <span class="marca__linha" aria-hidden="true"></span>
+      <span>ENTRE O SINAL E O PONTO</span>
     </a>
 
-    <div class="topo__acoes">
-      <span class="estado-mar"><i aria-hidden="true"></i>ensaio em movimento</span>
-      <button id="audioButton" class="botao-som" type="button" aria-pressed="false">
-        <span class="botao-som__icone" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-        <span id="audioLabel">ouvir a cena</span>
-      </button>
-    </div>
+    <button id="audioButton" class="som" type="button" aria-pressed="false">
+      <span class="som__icone" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span id="audioLabel">ouvir a sala</span>
+    </button>
   </header>
 
   <aside class="progresso" aria-hidden="true">
     <span id="chapterIndex">01</span>
-    <div class="progresso__trilho"><i id="progressBar"></i></div>
+    <div><i id="progressBar"></i></div>
     <span>06</span>
   </aside>
 
   <main id="inicio">
     <section class="capitulo capitulo--abertura" data-capitulo="1">
-      <div class="texto texto--hero manifesto-hero">
-        <p class="sobretitulo">um ensaio visual sobre escola, trabalho e quem decide o valor de uma vida</p>
-        <h1>Você não nasceu<br>para caber numa nota.</h1>
-        <p class="introducao">Esta experiência parte de uma tese: educação perde sentido quando vira treinamento para competir, obedecer, produzir e provar o próprio valor o tempo inteiro. Aprender deveria ampliar o mundo — não reduzir uma pessoa a nota, currículo, salário ou produtividade.</p>
-
-        <div class="frase-manifesto">
-          <span>eu quero aprender para entender o mundo</span>
-          <strong>não só para caber nele.</strong>
-        </div>
-
-        <div class="convite" aria-hidden="true">
-          <span>desça devagar</span>
-          <i></i>
-        </div>
+      <div class="frase frase--esquerda">
+        <p class="hora">06:48 · sala vazia</p>
+        <h1>Disseram que aprender<br>era descobrir.</h1>
+        <p class="continua">Depois me deram um gabarito.</p>
       </div>
     </section>
 
     <section class="capitulo" data-capitulo="2">
-      <div class="texto texto--esquerda">
-        <p class="sobretitulo">01 · a mesma prova, vidas diferentes</p>
-        <h2>A prova chega igual.<br>A vida não.</h2>
-        <p>Dois estudantes podem receber a mesma folha e chegar a ela por caminhos completamente diferentes: renda, tempo disponível, alimentação, espaço para estudar, segurança, acesso a livros e apoio familiar. Tratar o resultado como se viesse apenas de esforço individual transforma desigualdade em aparência de mérito.</p>
-
-        <div class="dado-editorial">
-          <span class="dado-editorial__numero">85</span>
-          <div>
-            <strong>pontos de diferença</strong>
-            <p>No PISA 2025, estudantes socioeconomicamente favorecidos tiveram, em média na OCDE, 85 pontos a mais em ciências do que os desfavorecidos.</p>
-            <a href="https://www.unesco.org/en/articles/pisa-2025-real-test-begins-after-results-are" target="_blank" rel="noreferrer">UNESCO · PISA 2025</a>
-          </div>
-        </div>
+      <div class="frase frase--direita">
+        <p class="hora">07:31 · prova</p>
+        <h2>A mesma prova cai<br>sobre vidas que nunca<br>começaram do mesmo lugar.</h2>
       </div>
     </section>
 
     <section class="capitulo" data-capitulo="3">
-      <div class="texto texto--direita">
-        <p class="sobretitulo">02 · quando aprender vira treinamento</p>
-        <h2>Curiosidade não cabe<br>num gabarito.</h2>
-        <p>Uma escola pode ensinar ciência, arte, história e pensamento crítico — ou pode ensinar sobretudo a cumprir prazo, pedir permissão, memorizar para a prova e aceitar que alguém de fora sempre decidirá o que vale. Avaliar é útil. O problema começa quando a medida substitui o aprendizado.</p>
-
-        <div class="anotacao anotacao--direita">
-          <span>nota ≠ inteligência</span>
-          <span>disciplina ≠ obediência</span>
-          <span>emprego ≠ finalidade da educação</span>
-        </div>
+      <div class="frase frase--esquerda">
+        <p class="hora">10:12 · silêncio</p>
+        <h2>Quando obedecer vale<br>mais que perguntar,</h2>
+        <p class="continua">a escola começa a parecer treinamento.</p>
       </div>
     </section>
 
     <section class="capitulo" data-capitulo="4">
-      <div class="texto texto--esquerda">
-        <p class="sobretitulo">03 · produzir mais, receber quanto?</p>
-        <h2>O relógio mede horas.<br>Não mede dignidade.</h2>
-        <p>O capitalismo organiza grande parte da produção através de propriedade, mercado, salário e lucro. A crítica aqui não é que toda troca seja exploração; é que uma sociedade pode produzir cada vez mais sem repartir os ganhos na mesma proporção — e então ensinar cedo que sobreviver depende de transformar tempo em valor econômico.</p>
-
-        <div class="comparacao-trabalho" aria-label="Comparação entre produtividade e salários reais em países de alta renda, 1999 a 2024">
-          <div>
-            <span>produtividade</span>
-            <strong>+29%</strong>
-            <i style="width:75%"></i>
-          </div>
-          <div>
-            <span>salários reais</span>
-            <strong>+15%</strong>
-            <i style="width:39%"></i>
-          </div>
-          <p>Países de alta renda, 1999–2024. O dado não prova uma causa única; ele mostra uma distância que merece ser explicada.</p>
-          <a href="https://www.ilo.org/publications/flagship-reports/global-wage-report-2024-25-wage-inequality-decreasing-globally" target="_blank" rel="noreferrer">OIT · Global Wage Report 2024–25</a>
-        </div>
+      <div class="frase frase--direita">
+        <p class="hora">17:03 · o mesmo relógio</p>
+        <h2>O sinal toca.<br>Anos depois,<br>o ponto bate.</h2>
+        <p class="continua">O corpo aprende a mesma pressa.</p>
       </div>
     </section>
 
     <section class="capitulo" data-capitulo="5">
-      <div class="texto texto--direita">
-        <p class="sobretitulo">04 · conhecimento não é mercadoria</p>
-        <h2>Aprender não deveria<br>ter catraca.</h2>
-        <p>Biblioteca, laboratório, universidade, professor, internet, cultura e tempo para estudar não são luxo intelectual. São infraestrutura de autonomia. Quando o acesso depende demais da renda, a educação promete mobilidade enquanto reproduz parte das diferenças que diz superar.</p>
-
-        <div class="citacao-dado">
-          <p>A própria OCDE resume o problema de 2025 dizendo que a escolaridade continua alta, mas oportunidades desiguais persistem.</p>
-          <a href="https://www.oecd.org/en/publications/education-at-a-glance-2025_1c0d9c79-en/full-report.html" target="_blank" rel="noreferrer">OCDE · Education at a Glance 2025</a>
-        </div>
-
-        <div class="contraponto">
-          <span>contraponto</span>
-          <p>Avaliações podem revelar lacunas. Mercados podem coordenar produção e escolha. Esta crítica é ao momento em que a ferramenta vira finalidade: nota acima de aprendizagem, lucro acima de dignidade, competição acima de cooperação.</p>
-        </div>
+      <div class="frase frase--esquerda">
+        <p class="hora">18:46 · meta do dia</p>
+        <h2>Se o tempo só vale<br>quando vira produtividade,</h2>
+        <p class="continua">até aprender começa a parecer investimento em si mesmo.</p>
       </div>
     </section>
 
     <section class="capitulo capitulo--final" data-capitulo="6">
-      <div class="texto texto--centro final-manifesto">
-        <p class="sobretitulo">05 · o que deveria ficar depois da aula</p>
-        <h2>Ensinar alguém a pensar<br>é ensinar alguém a não aceitar tudo.</h2>
-        <p>Eu defendo uma educação que dê tempo para perguntar, errar, refazer, criar, discordar e compreender. Que ensine trabalho sem transformar gente em mão de obra. Que ensine economia sem tratar o sistema econômico como natureza. Que ensine história sem medo de conflito. E que trate conhecimento como uma forma de liberdade compartilhada.</p>
-
-        <div class="palavras-finais" aria-label="Princípios defendidos">
-          <span>curiosidade</span>
-          <span>ciência</span>
-          <span>arte</span>
-          <span>tempo</span>
-          <span>cooperação</span>
-          <span>autonomia</span>
-          <span>acesso</span>
-          <span>pensamento crítico</span>
-        </div>
-
-        <button id="restartButton" class="reiniciar" type="button">ler outra vez</button>
+      <div class="frase frase--centro">
+        <p class="hora">amanhecer · porta aberta</p>
+        <h2>Conhecimento não deveria<br>ensinar você a caber no mundo.</h2>
+        <p class="continua continua--final">Deveria dar ferramentas para transformá-lo.</p>
+        <button id="restartButton" class="reiniciar" type="button">voltar para a primeira carteira</button>
       </div>
 
       <footer>
-        <span>NÃO CABE NA NOTA · ensaio visual</span>
-        <span>fontes: UNESCO · OCDE · OIT</span>
+        <span>uma sala · dois sistemas · o mesmo relógio</span>
+        <span>Three.js · áudio procedural</span>
       </footer>
     </section>
   </main>
 
   <noscript>
-    <div class="sem-js">Esta experiência precisa de JavaScript para renderizar a cena em tempo real.</div>
+    <div class="sem-js">Esta experiência precisa de JavaScript para renderizar a sala.</div>
   </noscript>
 
   <script type="module" src="./app.js"></script>
-  <script type="module" src="./js/vestigios.js"></script>
 </body>
 </html>
