@@ -1,8 +1,5 @@
-import * as THREE from 'three';
 import { criarCena } from './js/cena.js';
 import { criarAudioAmbiente } from './js/audio.js';
-
-globalThis.vetorSol = new THREE.Vector3();
 
 const canvas = document.querySelector('#cinema');
 const preloader = document.querySelector('#preloader');
@@ -19,23 +16,25 @@ const reduzMovimento = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const ponteiro = { x: 0, y: 0 };
 const ponteiroAlvo = { x: 0, y: 0 };
 let cena3d;
-let ultimoProgresso = -1;
 let paginaVisivel = true;
 let resizeFrame;
+let progressoAtual = 0;
+let interfaceSuja = true;
 
 function limitar(valor, minimo = 0, maximo = 1) {
   return Math.min(maximo, Math.max(minimo, valor));
 }
 
-function progressoPagina() {
+function medirProgresso() {
   const total = document.documentElement.scrollHeight - innerHeight;
-  return total > 0 ? limitar(scrollY / total) : 0;
+  progressoAtual = total > 0 ? limitar(scrollY / total) : 0;
 }
 
 function atualizarTexto() {
   if (reduzMovimento) return;
 
   const centroTela = innerHeight * 0.53;
+
   textos.forEach((texto) => {
     const secao = texto.closest('.capitulo');
     const rect = secao.getBoundingClientRect();
@@ -43,8 +42,9 @@ function atualizarTexto() {
     const distancia = Math.abs(centroSecao - centroTela);
     const alcance = Math.max(innerHeight * 0.95, rect.height * 0.48);
     const presenca = limitar(1 - distancia / alcance);
-    texto.style.opacity = String(0.26 + presenca * 0.74);
-    texto.style.transform = `translate3d(0, ${(1 - presenca) * 24}px, 0)`;
+
+    texto.style.opacity = String(0.28 + presenca * 0.72);
+    texto.style.transform = `translate3d(0, ${(1 - presenca) * 22}px, 0)`;
   });
 }
 
@@ -57,6 +57,7 @@ function atualizarCapitulo() {
     const rect = capitulo.getBoundingClientRect();
     const centro = rect.top + rect.height * 0.5;
     const distancia = Math.abs(centro - linha);
+
     if (distancia < menorDistancia) {
       menorDistancia = distancia;
       atual = indice + 1;
@@ -66,10 +67,11 @@ function atualizarCapitulo() {
   chapterIndex.textContent = String(atual).padStart(2, '0');
 }
 
-function atualizarInterface(progresso) {
-  progressBar.style.transform = `scaleY(${progresso})`;
+function atualizarInterface() {
+  progressBar.style.transform = `scaleY(${progressoAtual})`;
   atualizarCapitulo();
   atualizarTexto();
+  interfaceSuja = false;
 }
 
 function animar() {
@@ -79,14 +81,10 @@ function animar() {
   ponteiro.x += (ponteiroAlvo.x - ponteiro.x) * 0.045;
   ponteiro.y += (ponteiroAlvo.y - ponteiro.y) * 0.045;
 
-  const progresso = progressoPagina();
-  const estadoMar = cena3d.atualizar(progresso, ponteiro);
-  audio.atualizar(progresso, estadoMar);
+  const estadoMar = cena3d.atualizar(progressoAtual, ponteiro);
+  audio.atualizar(progressoAtual, estadoMar);
 
-  if (Math.abs(progresso - ultimoProgresso) > 0.0005) {
-    atualizarInterface(progresso);
-    ultimoProgresso = progresso;
-  }
+  if (interfaceSuja) atualizarInterface();
 }
 
 function entradaPonteiro(evento) {
@@ -100,17 +98,23 @@ function sairPonteiro() {
   ponteiroAlvo.y = 0;
 }
 
+function aoRolar() {
+  medirProgresso();
+  interfaceSuja = true;
+}
+
 function redimensionar() {
   cancelAnimationFrame(resizeFrame);
   resizeFrame = requestAnimationFrame(() => {
+    medirProgresso();
     cena3d?.redimensionar();
-    atualizarInterface(progressoPagina());
+    interfaceSuja = true;
   });
 }
 
 function esconderPreloader() {
   preloaderValue.textContent = '100%';
-  setTimeout(() => preloader.classList.add('oculto'), 260);
+  setTimeout(() => preloader.classList.add('oculto'), 240);
 }
 
 function falhaWebGL() {
@@ -136,12 +140,14 @@ restartButton.addEventListener('click', () => {
   scrollTo({ top: 0, behavior: reduzMovimento ? 'auto' : 'smooth' });
 });
 
+addEventListener('scroll', aoRolar, { passive: true });
 addEventListener('pointermove', entradaPonteiro, { passive: true });
 document.documentElement.addEventListener('mouseleave', sairPonteiro);
 addEventListener('resize', redimensionar, { passive: true });
 
 document.addEventListener('visibilitychange', () => {
   paginaVisivel = !document.hidden;
+
   if (!paginaVisivel) {
     audio.desligar();
     audioButton.setAttribute('aria-pressed', 'false');
@@ -154,16 +160,18 @@ addEventListener('pagehide', () => {
 }, { once: true });
 
 async function iniciar() {
-  preloaderValue.textContent = '16%';
+  medirProgresso();
+  preloaderValue.textContent = '18%';
   await new Promise((resolver) => requestAnimationFrame(resolver));
 
-  preloaderValue.textContent = '43%';
+  preloaderValue.textContent = '52%';
+
   try {
     cena3d = criarCena(canvas);
-    preloaderValue.textContent = '84%';
+    preloaderValue.textContent = '88%';
 
     await new Promise((resolver) => requestAnimationFrame(() => requestAnimationFrame(resolver)));
-    atualizarInterface(progressoPagina());
+    atualizarInterface();
     esconderPreloader();
     animar();
   } catch (erro) {
