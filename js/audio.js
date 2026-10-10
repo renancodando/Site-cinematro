@@ -1,99 +1,72 @@
-function criarRuido(contexto, segundos, tipo = 'marrom', sementeInicial = 4871) {
+function criarRuido(contexto, segundos = 3.2) {
   const taxa = contexto.sampleRate;
   const tamanho = Math.floor(taxa * segundos);
-  const buffer = contexto.createBuffer(2, tamanho, taxa);
+  const buffer = contexto.createBuffer(1, tamanho, taxa);
+  const dados = buffer.getChannelData(0);
+  let anterior = 0;
+  let semente = 4871;
 
-  for (let canal = 0; canal < 2; canal++) {
-    const dados = buffer.getChannelData(canal);
-    let anterior = 0;
-    let semente = sementeInicial + canal * 4261;
+  const random = () => {
+    semente = (semente * 16807) % 2147483647;
+    return (semente - 1) / 2147483646;
+  };
 
-    const random = () => {
-      semente = (semente * 16807) % 2147483647;
-      return (semente - 1) / 2147483646;
-    };
-
-    for (let i = 0; i < tamanho; i++) {
-      const branco = random() * 2 - 1;
-      if (tipo === 'marrom') {
-        anterior = (anterior + 0.02 * branco) / 1.02;
-        dados[i] = anterior * 3.15;
-      } else {
-        dados[i] = branco * 0.72;
-      }
-    }
+  for (let i = 0; i < tamanho; i++) {
+    const branco = random() * 2 - 1;
+    anterior = (anterior + 0.022 * branco) / 1.022;
+    dados[i] = anterior * 2.2 + branco * 0.17;
   }
 
   return buffer;
 }
 
-function fonteLoop(contexto, buffer) {
-  const fonte = contexto.createBufferSource();
-  fonte.buffer = buffer;
-  fonte.loop = true;
-  return fonte;
+function conectarCamada(contexto, fonte, master, tipo, frequencia, q, ganho) {
+  const filtro = contexto.createBiquadFilter();
+  filtro.type = tipo;
+  filtro.frequency.value = frequencia;
+  filtro.Q.value = q;
+
+  const volume = contexto.createGain();
+  volume.gain.value = ganho;
+
+  fonte.connect(filtro);
+  filtro.connect(volume);
+  volume.connect(master);
+
+  return { filtro, volume };
 }
 
 export function criarAudioAmbiente() {
   let contexto;
   let master;
-  let ganhoMar;
-  let ganhoEspuma;
-  let ganhoImpacto;
-  let ganhoVento;
-  let filtroImpacto;
+  let fonte;
+  let mar;
+  let espuma;
+  let impacto;
+  let vento;
   let ativo = false;
   let iniciado = false;
+  let ultimaAtualizacao = -1;
 
   function iniciarNos() {
     const AudioContexto = window.AudioContext || window.webkitAudioContext;
     if (!AudioContexto) return false;
 
-    contexto = new AudioContexto();
+    contexto = new AudioContexto({ latencyHint: 'interactive' });
     master = contexto.createGain();
     master.gain.value = 0;
     master.connect(contexto.destination);
 
-    const mar = fonteLoop(contexto, criarRuido(contexto, 9, 'marrom', 4871));
-    const filtroMar = contexto.createBiquadFilter();
-    filtroMar.type = 'lowpass';
-    filtroMar.frequency.value = 860;
-    filtroMar.Q.value = 0.42;
-    ganhoMar = contexto.createGain();
-    ganhoMar.gain.value = 0.44;
-    mar.connect(filtroMar).connect(ganhoMar).connect(master);
+    fonte = contexto.createBufferSource();
+    fonte.buffer = criarRuido(contexto);
+    fonte.loop = true;
 
-    const espuma = fonteLoop(contexto, criarRuido(contexto, 7, 'branco', 8411));
-    const filtroEspuma = contexto.createBiquadFilter();
-    filtroEspuma.type = 'bandpass';
-    filtroEspuma.frequency.value = 1850;
-    filtroEspuma.Q.value = 0.5;
-    ganhoEspuma = contexto.createGain();
-    ganhoEspuma.gain.value = 0.035;
-    espuma.connect(filtroEspuma).connect(ganhoEspuma).connect(master);
+    mar = conectarCamada(contexto, fonte, master, 'lowpass', 760, 0.38, 0.46);
+    espuma = conectarCamada(contexto, fonte, master, 'bandpass', 1760, 0.5, 0.025);
+    impacto = conectarCamada(contexto, fonte, master, 'lowpass', 230, 0.74, 0.008);
+    vento = conectarCamada(contexto, fonte, master, 'bandpass', 1210, 0.66, 0.024);
 
-    const impacto = fonteLoop(contexto, criarRuido(contexto, 6, 'marrom', 1229));
-    filtroImpacto = contexto.createBiquadFilter();
-    filtroImpacto.type = 'lowpass';
-    filtroImpacto.frequency.value = 240;
-    filtroImpacto.Q.value = 0.7;
-    ganhoImpacto = contexto.createGain();
-    ganhoImpacto.gain.value = 0.01;
-    impacto.connect(filtroImpacto).connect(ganhoImpacto).connect(master);
-
-    const vento = fonteLoop(contexto, criarRuido(contexto, 5, 'branco', 5939));
-    const filtroVento = contexto.createBiquadFilter();
-    filtroVento.type = 'bandpass';
-    filtroVento.frequency.value = 1260;
-    filtroVento.Q.value = 0.74;
-    ganhoVento = contexto.createGain();
-    ganhoVento.gain.value = 0.035;
-    vento.connect(filtroVento).connect(ganhoVento).connect(master);
-
-    mar.start();
-    espuma.start();
-    impacto.start();
-    vento.start();
+    fonte.start();
     iniciado = true;
     return true;
   }
@@ -106,7 +79,7 @@ export function criarAudioAmbiente() {
     const agora = contexto.currentTime;
     master.gain.cancelScheduledValues(agora);
     master.gain.setValueAtTime(master.gain.value, agora);
-    master.gain.linearRampToValueAtTime(ativo ? 0.22 : 0, agora + 0.75);
+    master.gain.linearRampToValueAtTime(ativo ? 0.2 : 0, agora + 0.55);
     return ativo;
   }
 
@@ -114,16 +87,20 @@ export function criarAudioAmbiente() {
     if (!iniciado || !ativo) return;
 
     const agora = contexto.currentTime;
-    const impacto = Math.max(0, Math.min(1, estadoMar.impacto ?? 0));
-    const espuma = Math.max(0, Math.min(1, estadoMar.espuma ?? 0));
-    const vento = Math.max(0, Math.min(1, estadoMar.vento ?? 0.35));
-    const proximidadeCosta = 0.62 + Math.sin(progresso * Math.PI) * 0.38;
+    if (ultimaAtualizacao >= 0 && agora - ultimaAtualizacao < 0.045) return;
+    ultimaAtualizacao = agora;
 
-    ganhoMar.gain.setTargetAtTime(0.38 + proximidadeCosta * 0.18, agora, 0.14);
-    ganhoImpacto.gain.setTargetAtTime(0.012 + impacto * 0.42, agora, impacto > 0.15 ? 0.025 : 0.22);
-    ganhoEspuma.gain.setTargetAtTime(0.025 + espuma * 0.19, agora, espuma > 0.12 ? 0.08 : 0.3);
-    ganhoVento.gain.setTargetAtTime(0.024 + vento * 0.055, agora, 0.5);
-    filtroImpacto.frequency.setTargetAtTime(180 + impacto * 260, agora, 0.05);
+    const nivelImpacto = Math.max(0, Math.min(1, estadoMar.impacto ?? 0));
+    const nivelEspuma = Math.max(0, Math.min(1, estadoMar.espuma ?? 0));
+    const nivelVento = Math.max(0, Math.min(1, estadoMar.vento ?? 0.4));
+    const proximidade = 0.58 + Math.sin(progresso * Math.PI) * 0.42;
+
+    mar.volume.gain.setTargetAtTime(0.34 + proximidade * 0.2, agora, 0.12);
+    impacto.volume.gain.setTargetAtTime(0.006 + nivelImpacto * 0.48, agora, nivelImpacto > 0.2 ? 0.018 : 0.16);
+    espuma.volume.gain.setTargetAtTime(0.018 + nivelEspuma * 0.2, agora, nivelEspuma > 0.12 ? 0.055 : 0.22);
+    vento.volume.gain.setTargetAtTime(0.018 + nivelVento * 0.052, agora, 0.38);
+    impacto.filtro.frequency.setTargetAtTime(170 + nivelImpacto * 310, agora, 0.035);
+    espuma.filtro.frequency.setTargetAtTime(1540 + nivelEspuma * 520, agora, 0.08);
   }
 
   function desligar() {
@@ -131,7 +108,7 @@ export function criarAudioAmbiente() {
     const agora = contexto.currentTime;
     master.gain.cancelScheduledValues(agora);
     master.gain.setValueAtTime(master.gain.value, agora);
-    master.gain.linearRampToValueAtTime(0, agora + 0.35);
+    master.gain.linearRampToValueAtTime(0, agora + 0.28);
     ativo = false;
   }
 
