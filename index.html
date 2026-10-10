@@ -4,10 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#071014">
-  <meta name="description" content="MARÉ 04:47 — uma experiência cinematográfica em tempo real sobre o Atlântico, ondas, vento, espuma, luz e som.">
-  <title>MARÉ 04:47 — Atlântico em tempo real</title>
+  <meta name="description" content="NÃO CABE NA NOTA — ensaio cinematográfico sobre educação, desigualdade, trabalho e a ideia de medir uma vida por desempenho.">
+  <title>NÃO CABE NA NOTA — educação, trabalho e liberdade</title>
   <link rel="stylesheet" href="./style.css">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23071014'/%3E%3Cpath d='M5 34c9-8 17-8 27 0s18 8 27 0M5 43c9-8 17-8 27 0s18 8 27 0' fill='none' stroke='%23eee7d9' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./critica.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23071014'/%3E%3Cpath d='M10 17h44M10 31h31M10 45h23' stroke='%23eee7d9' stroke-width='3' stroke-linecap='round'/%3E%3Cpath d='m43 39 10 10m0-10L43 49' stroke='%23b85a4f' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
   <script type="importmap">
     {
       "imports": {
@@ -20,25 +21,27 @@
 <body>
   <div id="preloader" class="preloader" aria-live="polite">
     <div class="preloader__mar" aria-hidden="true"><i></i><i></i><i></i></div>
-    <p>formando o mar</p>
+    <p>abrindo o caderno</p>
     <span id="preloaderValue">0%</span>
   </div>
 
   <canvas id="cinema" aria-hidden="true"></canvas>
+  <canvas id="vestigios" aria-hidden="true"></canvas>
   <div class="atmosfera" aria-hidden="true"></div>
   <div class="grao" aria-hidden="true"></div>
+  <div class="margem-caderno" aria-hidden="true"></div>
 
   <header class="topo">
     <a class="marca" href="#inicio" aria-label="Voltar ao início">
-      <span class="marca__onda" aria-hidden="true"></span>
-      <span>MARÉ 04:47</span>
+      <span class="marca__risco" aria-hidden="true"></span>
+      <span>NÃO CABE NA NOTA</span>
     </a>
 
     <div class="topo__acoes">
-      <span class="estado-mar"><i aria-hidden="true"></i>mar vivo</span>
+      <span class="estado-mar"><i aria-hidden="true"></i>ensaio em movimento</span>
       <button id="audioButton" class="botao-som" type="button" aria-pressed="false">
         <span class="botao-som__icone" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-        <span id="audioLabel">ouvir o mar</span>
+        <span id="audioLabel">ouvir a cena</span>
       </button>
     </div>
   </header>
@@ -46,23 +49,20 @@
   <aside class="progresso" aria-hidden="true">
     <span id="chapterIndex">01</span>
     <div class="progresso__trilho"><i id="progressBar"></i></div>
-    <span>05</span>
+    <span>06</span>
   </aside>
 
   <main id="inicio">
     <section class="capitulo capitulo--abertura" data-capitulo="1">
-      <div class="texto texto--hero">
-        <p class="sobretitulo">Atlântico Sul · 04:47 · costa rochosa</p>
-        <h1>O mar chega<br>antes da luz.</h1>
-        <p class="introducao">Uma costa inteira calculada em tempo real. As ondas têm direção, período e altura; a espuma nasce nas cristas e o som acompanha o instante em que a água encontra a pedra.</p>
+      <div class="texto texto--hero manifesto-hero">
+        <p class="sobretitulo">um ensaio visual sobre escola, trabalho e quem decide o valor de uma vida</p>
+        <h1>Você não nasceu<br>para caber numa nota.</h1>
+        <p class="introducao">Esta experiência parte de uma tese: educação perde sentido quando vira treinamento para competir, obedecer, produzir e provar o próprio valor o tempo inteiro. Aprender deveria ampliar o mundo — não reduzir uma pessoa a nota, currículo, salário ou produtividade.</p>
 
-        <dl class="telemetria" aria-label="Condições simuladas do mar">
-          <div><dt>onda</dt><dd>1,8 m</dd></div>
-          <div><dt>período</dt><dd>9,4 s</dd></div>
-          <div><dt>vento</dt><dd>22 km/h</dd></div>
-          <div><dt>água</dt><dd>22 °C</dd></div>
-        </dl>
-        <p class="nota-simulacao">Condições cinematográficas simuladas, não dados meteorológicos ao vivo.</p>
+        <div class="frase-manifesto">
+          <span>eu quero aprender para entender o mundo</span>
+          <strong>não só para caber nele.</strong>
+        </div>
 
         <div class="convite" aria-hidden="true">
           <span>desça devagar</span>
@@ -73,59 +73,108 @@
 
     <section class="capitulo" data-capitulo="2">
       <div class="texto texto--esquerda">
-        <p class="sobretitulo">01 · mar aberto</p>
-        <h2>Nenhuma onda<br>repete a anterior.</h2>
-        <p>Quatro trens de onda atravessam a superfície em direções diferentes. As maiores carregam o corpo do mar; as menores quebram o reflexo e dão peso ao vento.</p>
-        <div class="detalhes">
-          <span>ondulação principal · sudoeste</span>
-          <span>cristas secundárias · vento costeiro</span>
+        <p class="sobretitulo">01 · a mesma prova, vidas diferentes</p>
+        <h2>A prova chega igual.<br>A vida não.</h2>
+        <p>Dois estudantes podem receber a mesma folha e chegar a ela por caminhos completamente diferentes: renda, tempo disponível, alimentação, espaço para estudar, segurança, acesso a livros e apoio familiar. Tratar o resultado como se viesse apenas de esforço individual transforma desigualdade em aparência de mérito.</p>
+
+        <div class="dado-editorial">
+          <span class="dado-editorial__numero">85</span>
+          <div>
+            <strong>pontos de diferença</strong>
+            <p>No PISA 2025, estudantes socioeconomicamente favorecidos tiveram, em média na OCDE, 85 pontos a mais em ciências do que os desfavorecidos.</p>
+            <a href="https://www.unesco.org/en/articles/pisa-2025-real-test-begins-after-results-are" target="_blank" rel="noreferrer">UNESCO · PISA 2025</a>
+          </div>
         </div>
       </div>
     </section>
 
     <section class="capitulo" data-capitulo="3">
       <div class="texto texto--direita">
-        <p class="sobretitulo">02 · arrebentação</p>
-        <h2>A pedra recebe<br>todo o impacto.</h2>
-        <p>Quando a frente de onda alcança a costa, a crista clareia, abre em espuma e lança spray acima das rochas. O ruído grave chega primeiro; a espuma permanece por alguns segundos depois.</p>
-        <div class="detalhes detalhes--direita">
-          <span>impacto sincronizado com o áudio</span>
-          <span>espuma dinâmica · spray em partículas</span>
+        <p class="sobretitulo">02 · quando aprender vira treinamento</p>
+        <h2>Curiosidade não cabe<br>num gabarito.</h2>
+        <p>Uma escola pode ensinar ciência, arte, história e pensamento crítico — ou pode ensinar sobretudo a cumprir prazo, pedir permissão, memorizar para a prova e aceitar que alguém de fora sempre decidirá o que vale. Avaliar é útil. O problema começa quando a medida substitui o aprendizado.</p>
+
+        <div class="anotacao anotacao--direita">
+          <span>nota ≠ inteligência</span>
+          <span>disciplina ≠ obediência</span>
+          <span>emprego ≠ finalidade da educação</span>
         </div>
       </div>
     </section>
 
     <section class="capitulo" data-capitulo="4">
-      <div class="texto texto--esquerda texto--farol">
-        <p class="sobretitulo">03 · vigília</p>
-        <h2>O farol ainda<br>tem trabalho.</h2>
-        <p>A lente gira sobre a torre úmida e o feixe atravessa a névoa baixa. Vidro, metal e concreto recebem a mesma luz que aparece refletida no mar.</p>
-        <div class="registro">
-          <span>04:53</span>
-          <p>o horizonte começa a separar céu e água</p>
+      <div class="texto texto--esquerda">
+        <p class="sobretitulo">03 · produzir mais, receber quanto?</p>
+        <h2>O relógio mede horas.<br>Não mede dignidade.</h2>
+        <p>O capitalismo organiza grande parte da produção através de propriedade, mercado, salário e lucro. A crítica aqui não é que toda troca seja exploração; é que uma sociedade pode produzir cada vez mais sem repartir os ganhos na mesma proporção — e então ensinar cedo que sobreviver depende de transformar tempo em valor econômico.</p>
+
+        <div class="comparacao-trabalho" aria-label="Comparação entre produtividade e salários reais em países de alta renda, 1999 a 2024">
+          <div>
+            <span>produtividade</span>
+            <strong>+29%</strong>
+            <i style="--valor:.29"></i>
+          </div>
+          <div>
+            <span>salários reais</span>
+            <strong>+15%</strong>
+            <i style="--valor:.15"></i>
+          </div>
+          <p>Países de alta renda, 1999–2024. O dado não prova uma causa única; ele mostra uma distância que merece ser explicada.</p>
+          <a href="https://www.ilo.org/publications/flagship-reports/global-wage-report-2024-25-wage-inequality-decreasing-globally" target="_blank" rel="noreferrer">OIT · Global Wage Report 2024–25</a>
         </div>
       </div>
     </section>
 
-    <section class="capitulo capitulo--final" data-capitulo="5">
-      <div class="texto texto--centro">
-        <p class="sobretitulo">04 · primeira luz</p>
-        <h2>O dia não apaga<br>o oceano.</h2>
-        <p>A luz sobe por trás do horizonte, a lua perde contraste e o feixe do farol deixa de dominar a cena. O que continua igual é o movimento: vento, onda, espuma e pedra.</p>
-        <button id="restartButton" class="reiniciar" type="button">voltar para 04:47</button>
+    <section class="capitulo" data-capitulo="5">
+      <div class="texto texto--direita">
+        <p class="sobretitulo">04 · conhecimento não é mercadoria</p>
+        <h2>Aprender não deveria<br>ter catraca.</h2>
+        <p>Biblioteca, laboratório, universidade, professor, internet, cultura e tempo para estudar não são luxo intelectual. São infraestrutura de autonomia. Quando o acesso depende demais da renda, a educação promete mobilidade enquanto reproduz parte das diferenças que diz superar.</p>
+
+        <div class="citacao-dado">
+          <p>A própria OCDE resume o problema de 2025 dizendo que a escolaridade continua alta, mas oportunidades desiguais persistem.</p>
+          <a href="https://www.oecd.org/en/publications/education-at-a-glance-2025_1c0d9c79-en/full-report.html" target="_blank" rel="noreferrer">OECD · Education at a Glance 2025</a>
+        </div>
+
+        <div class="contraponto">
+          <span>contraponto</span>
+          <p>Avaliações podem revelar lacunas. Mercados podem coordenar produção e escolha. Esta crítica é ao momento em que a ferramenta vira finalidade: nota acima de aprendizagem, lucro acima de dignidade, competição acima de cooperação.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="capitulo capitulo--final" data-capitulo="6">
+      <div class="texto texto--centro final-manifesto">
+        <p class="sobretitulo">05 · o que deveria ficar depois da aula</p>
+        <h2>Ensinar alguém a pensar<br>é ensinar alguém a não aceitar tudo.</h2>
+        <p>Eu defendo uma educação que dê tempo para perguntar, errar, refazer, criar, discordar e compreender. Que ensine trabalho sem transformar gente em mão de obra. Que ensine economia sem tratar o sistema econômico como natureza. Que ensine história sem medo de conflito. E que trate conhecimento como uma forma de liberdade compartilhada.</p>
+
+        <div class="palavras-finais" aria-label="Princípios defendidos">
+          <span>curiosidade</span>
+          <span>ciência</span>
+          <span>arte</span>
+          <span>tempo</span>
+          <span>cooperação</span>
+          <span>autonomia</span>
+          <span>acesso</span>
+          <span>pensamento crítico</span>
+        </div>
+
+        <button id="restartButton" class="reiniciar" type="button">ler outra vez</button>
       </div>
 
       <footer>
-        <span>MARÉ 04:47 · experiência WebGL</span>
-        <span>Three.js · ondas Gerstner · áudio procedural</span>
+        <span>NÃO CABE NA NOTA · ensaio visual</span>
+        <span>fontes: UNESCO · OCDE · OIT</span>
       </footer>
     </section>
   </main>
 
   <noscript>
-    <div class="sem-js">Esta experiência precisa de JavaScript para renderizar o mar em tempo real.</div>
+    <div class="sem-js">Esta experiência precisa de JavaScript para renderizar a cena em tempo real.</div>
   </noscript>
 
   <script type="module" src="./app.js"></script>
+  <script type="module" src="./js/vestigios.js"></script>
 </body>
 </html>
