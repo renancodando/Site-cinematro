@@ -400,7 +400,7 @@ function criarOceano(segmentos) {
         float branca = smoothstep(1.00 + ruido * 0.22, 1.55, vCrest);
         branca *= smoothstep(0.08, 0.92, vHeight + 0.45);
 
-        float costa = smoothstep(-58.0, -112.0, vWorld.z);
+        float costa = 1.0 - smoothstep(-112.0, -58.0, vWorld.z);
         float banda = sin(vWorld.z * 0.36 + vWorld.x * 0.085 + uTime * 0.67);
         float quebra = smoothstep(0.12, 0.84, banda * 0.5 + 0.5);
         quebra *= costa * (0.16 + uImpact * 0.84);
@@ -536,6 +536,7 @@ function criarFarol() {
     dummy.updateMatrix();
     janelas.setMatrixAt(i, dummy.matrix);
   });
+  janelas.instanceMatrix.needsUpdate = true;
   grupo.add(janelas);
 
   const sacada = new THREE.Mesh(new THREE.CylinderGeometry(3.35, 3.35, 0.46, 36), metal);
@@ -568,6 +569,7 @@ function criarFarol() {
     dummy.updateMatrix();
     hastes.setMatrixAt(i, dummy.matrix);
   }
+  hastes.instanceMatrix.needsUpdate = true;
   grupo.add(hastes);
 
   const lenteMaterial = new THREE.MeshStandardMaterial({
