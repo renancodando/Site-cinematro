@@ -121,10 +121,27 @@ function atualizarCss(agora) {
   foco += ((.18 + trabalho * .32 - abertura * .26) - foco) * .03;
   exposicao += ((abertura * .24 - trabalho * .08 + flicker) - exposicao) * .04;
 
-  document.documentElement.style.setProperty('--respiracao-foco', `${foco.toFixed(4)}px`);
-  document.documentElement.style.setProperty('--exposicao-cena', exposicao.toFixed(4));
-  document.documentElement.style.setProperty('--frieza-cena', trabalho.toFixed(4));
-  document.documentElement.style.setProperty('--abertura-cena', abertura.toFixed(4));
+  const brilho = 1 + exposicao;
+  const contraste = 1.03 + trabalho * .035;
+  const saturacao = .94 - trabalho * .08 + abertura * .08;
+  const reflexo = .12 + abertura * .42;
+  const halation = .18 + abertura * .34;
+  const grao = .045 + trabalho * .018;
+  const vinhetaMeio = .12 + trabalho * .045;
+  const vinhetaBorda = .38 - abertura * .12;
+
+  const raiz = document.documentElement.style;
+  raiz.setProperty('--respiracao-foco', `${foco.toFixed(4)}px`);
+  raiz.setProperty('--brilho-cena', brilho.toFixed(4));
+  raiz.setProperty('--contraste-cena', contraste.toFixed(4));
+  raiz.setProperty('--saturacao-cena', saturacao.toFixed(4));
+  raiz.setProperty('--reflexo-cena', reflexo.toFixed(4));
+  raiz.setProperty('--halation-cena', halation.toFixed(4));
+  raiz.setProperty('--grao-cena', grao.toFixed(4));
+  raiz.setProperty('--vinheta-meio', vinhetaMeio.toFixed(4));
+  raiz.setProperty('--vinheta-borda', vinhetaBorda.toFixed(4));
+  raiz.setProperty('--frieza-cena', trabalho.toFixed(4));
+  raiz.setProperty('--abertura-cena', abertura.toFixed(4));
 }
 
 function quadro(agora) {
