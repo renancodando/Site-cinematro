@@ -32,22 +32,21 @@ function progressoPagina() {
 function atualizarTexto() {
   if (reduzMovimento) return;
 
-  const centroTela = innerHeight * 0.52;
+  const centroTela = innerHeight * 0.53;
   textos.forEach((texto) => {
     const secao = texto.closest('.capitulo');
     const rect = secao.getBoundingClientRect();
     const centroSecao = rect.top + rect.height * 0.5;
     const distancia = Math.abs(centroSecao - centroTela);
-    const alcance = Math.max(innerHeight * 0.9, rect.height * 0.47);
+    const alcance = Math.max(innerHeight * 0.95, rect.height * 0.48);
     const presenca = limitar(1 - distancia / alcance);
-    const deslocamento = (1 - presenca) * 28;
-    texto.style.opacity = String(0.2 + presenca * 0.8);
-    texto.style.transform = `translate3d(0, ${deslocamento}px, 0)`;
+    texto.style.opacity = String(0.26 + presenca * 0.74);
+    texto.style.transform = `translate3d(0, ${(1 - presenca) * 24}px, 0)`;
   });
 }
 
 function atualizarCapitulo() {
-  const linha = innerHeight * 0.52;
+  const linha = innerHeight * 0.53;
   let atual = 1;
   let menorDistancia = Infinity;
 
@@ -78,11 +77,11 @@ function animar() {
   ponteiro.y += (ponteiroAlvo.y - ponteiro.y) * 0.045;
 
   const progresso = progressoPagina();
-  cena3d.atualizar(progresso, ponteiro);
+  const estadoMar = cena3d.atualizar(progresso, ponteiro);
+  audio.atualizar(progresso, estadoMar);
 
   if (Math.abs(progresso - ultimoProgresso) > 0.0005) {
     atualizarInterface(progresso);
-    audio.atualizar(progresso);
     ultimoProgresso = progresso;
   }
 }
@@ -108,12 +107,12 @@ function redimensionar() {
 
 function esconderPreloader() {
   preloaderValue.textContent = '100%';
-  setTimeout(() => preloader.classList.add('oculto'), 220);
+  setTimeout(() => preloader.classList.add('oculto'), 260);
 }
 
 function falhaWebGL() {
   document.body.classList.add('sem-webgl');
-  canvas.style.background = '#071015';
+  canvas.style.background = 'linear-gradient(#15242c, #071014 55%, #020607)';
   esconderPreloader();
 }
 
@@ -123,7 +122,7 @@ audioButton.addEventListener('click', async () => {
   try {
     const ativo = await audio.alternar();
     audioButton.setAttribute('aria-pressed', String(ativo));
-    audioLabel.textContent = ativo ? 'som ligado' : 'ativar som';
+    audioLabel.textContent = ativo ? 'mar ligado' : 'ouvir o mar';
   } catch {
     audioLabel.textContent = 'som indisponível';
     audioButton.disabled = true;
@@ -140,10 +139,10 @@ addEventListener('resize', redimensionar, { passive: true });
 
 document.addEventListener('visibilitychange', () => {
   paginaVisivel = !document.hidden;
-  if (!paginaVisivel) audio.desligar();
   if (!paginaVisivel) {
+    audio.desligar();
     audioButton.setAttribute('aria-pressed', 'false');
-    audioLabel.textContent = 'ativar som';
+    audioLabel.textContent = 'ouvir o mar';
   }
 });
 
@@ -152,21 +151,20 @@ addEventListener('pagehide', () => {
 }, { once: true });
 
 async function iniciar() {
-  preloaderValue.textContent = '18%';
-
+  preloaderValue.textContent = '16%';
   await new Promise((resolver) => requestAnimationFrame(resolver));
-  preloaderValue.textContent = '46%';
 
+  preloaderValue.textContent = '43%';
   try {
     cena3d = criarCena(canvas);
-    preloaderValue.textContent = '82%';
+    preloaderValue.textContent = '84%';
 
     await new Promise((resolver) => requestAnimationFrame(() => requestAnimationFrame(resolver)));
     atualizarInterface(progressoPagina());
     esconderPreloader();
     animar();
   } catch (erro) {
-    console.error('Não foi possível iniciar a cena WebGL.', erro);
+    console.error('Não foi possível iniciar o oceano WebGL.', erro);
     falhaWebGL();
   }
 }
