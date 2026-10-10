@@ -1,15 +1,10 @@
 import * as THREE from 'three';
 
-const NOITE = new THREE.Color(0x071116);
-const NEVOA_NOITE = new THREE.Color(0x0b1b22);
-const NEVOA_DIA = new THREE.Color(0xa8a096);
-const MAR_NOITE = new THREE.Color(0x061a22);
-const MAR_DIA = new THREE.Color(0x205a63);
-const CEU_NOITE = new THREE.Color(0x07141f);
-const CEU_ALTO = new THREE.Color(0x2d5366);
-const CEU_DIA = new THREE.Color(0xaac6cf);
-const HORIZONTE = new THREE.Color(0xe2ad82);
-const PERIODO_ONDA = 9.4;
+const COR_PAREDE = new THREE.Color(0xb7b2a7);
+const COR_PAREDE_FRIA = new THREE.Color(0x8f9696);
+const COR_LUZ_ESCOLA = new THREE.Color(0xffe7bd);
+const COR_LUZ_TRABALHO = new THREE.Color(0xc9dded);
+const COR_MANHA = new THREE.Color(0xffcf98);
 
 function limitar(valor, minimo = 0, maximo = 1) {
   return Math.min(maximo, Math.max(minimo, valor));
@@ -35,815 +30,530 @@ function aleatorio(seed) {
   };
 }
 
-function pulsoCircular(fase, centro, largura) {
-  const d = Math.min(Math.abs(fase - centro), 1 - Math.abs(fase - centro));
-  return Math.exp(-Math.pow(d / largura, 2));
-}
-
-function detectarPerfil() {
-  const largura = innerWidth;
-  const altura = innerHeight;
-  const area = largura * altura;
+function perfil() {
+  const toque = matchMedia('(pointer: coarse)').matches;
   const cores = navigator.hardwareConcurrency || 4;
   const memoria = navigator.deviceMemory || 4;
-  const toque = matchMedia('(pointer: coarse)').matches;
-  let nivel = 2;
-
-  if (toque || area > 2200000 || cores <= 4 || memoria <= 4) nivel = 1;
-  if ((toque && (cores <= 4 || memoria <= 3)) || area > 4200000 || cores <= 2) nivel = 0;
-
-  const configuracoes = [
-    { segmentos: 68, estrelas: 420, spray: 90, dprMin: 0.78, dprMax: 1.0, fps: 42 },
-    { segmentos: 88, estrelas: 720, spray: 145, dprMin: 0.82, dprMax: 1.18, fps: 50 },
-    { segmentos: 112, estrelas: 1050, spray: 210, dprMin: 0.9, dprMax: 1.42, fps: 60 }
-  ];
-
-  return { nivel, ...configuracoes[nivel] };
+  const fraco = toque || cores <= 4 || memoria <= 4;
+  return {
+    dprMin: fraco ? 0.82 : 0.95,
+    dprMax: fraco ? 1.08 : 1.38,
+    poeira: fraco ? 180 : 360,
+    antialias: !fraco
+  };
 }
 
-function criarTexturaRocha() {
+function texturaParede() {
   const tamanho = 256;
   const canvas = document.createElement('canvas');
-  canvas.width = tamanho;
-  canvas.height = tamanho;
+  canvas.width = canvas.height = tamanho;
   const ctx = canvas.getContext('2d');
-  const rand = aleatorio(4211);
-
-  const base = ctx.createLinearGradient(0, 0, tamanho, tamanho);
-  base.addColorStop(0, '#465050');
-  base.addColorStop(0.5, '#273031');
-  base.addColorStop(1, '#161d1f');
-  ctx.fillStyle = base;
+  const rand = aleatorio(9137);
+  ctx.fillStyle = '#b7b2a7';
   ctx.fillRect(0, 0, tamanho, tamanho);
 
-  for (let i = 0; i < 900; i++) {
-    const tom = 18 + Math.floor(rand() * 65);
-    ctx.fillStyle = `rgba(${tom},${tom + 7},${tom + 8},${0.04 + rand() * 0.16})`;
-    ctx.beginPath();
-    ctx.ellipse(
-      rand() * tamanho,
-      rand() * tamanho,
-      0.5 + rand() * 4.5,
-      0.35 + rand() * 2.8,
-      rand() * Math.PI,
-      0,
-      Math.PI * 2
-    );
-    ctx.fill();
-  }
-
-  for (let i = 0; i < 22; i++) {
-    ctx.strokeStyle = `rgba(4,8,9,${0.08 + rand() * 0.16})`;
-    ctx.lineWidth = 0.6 + rand() * 1.5;
-    ctx.beginPath();
-    let x = rand() * tamanho;
-    let y = rand() * tamanho;
-    ctx.moveTo(x, y);
-    for (let p = 0; p < 4; p++) {
-      x += (rand() - 0.5) * 46;
-      y += 12 + rand() * 38;
-      ctx.lineTo(x, y);
-    }
-    ctx.stroke();
-  }
-
-  const textura = new THREE.CanvasTexture(canvas);
-  textura.wrapS = textura.wrapT = THREE.RepeatWrapping;
-  textura.repeat.set(2.4, 2.4);
-  textura.colorSpace = THREE.SRGBColorSpace;
-  textura.anisotropy = 2;
-  return textura;
-}
-
-function criarTexturaConcreto() {
-  const tamanho = 256;
-  const canvas = document.createElement('canvas');
-  canvas.width = tamanho;
-  canvas.height = tamanho;
-  const ctx = canvas.getContext('2d');
-  const rand = aleatorio(17041);
-
-  ctx.fillStyle = '#d5cec1';
-  ctx.fillRect(0, 0, tamanho, tamanho);
-
-  for (let i = 0; i < 1450; i++) {
-    const claro = rand() > 0.42;
-    const tom = claro ? 205 + Math.floor(rand() * 32) : 110 + Math.floor(rand() * 58);
-    ctx.fillStyle = `rgba(${tom},${tom},${Math.max(0, tom - 7)},${0.018 + rand() * 0.048})`;
-    const r = 0.35 + rand() * 1.8;
+  for (let i = 0; i < 1500; i++) {
+    const tom = 115 + Math.floor(rand() * 75);
+    ctx.fillStyle = `rgba(${tom},${tom},${Math.max(0, tom - 8)},${0.016 + rand() * 0.035})`;
+    const r = 0.4 + rand() * 1.7;
     ctx.fillRect(rand() * tamanho, rand() * tamanho, r, r);
   }
 
-  for (let i = 0; i < 8; i++) {
-    const x = rand() * tamanho;
-    const g = ctx.createLinearGradient(x, 0, x + 18, 0);
-    g.addColorStop(0, 'rgba(52,63,61,0)');
-    g.addColorStop(0.5, `rgba(52,63,61,${0.025 + rand() * 0.05})`);
-    g.addColorStop(1, 'rgba(52,63,61,0)');
+  for (let i = 0; i < 12; i++) {
+    const y = rand() * tamanho;
+    const g = ctx.createLinearGradient(0, y, 0, y + 28);
+    g.addColorStop(0, 'rgba(70,65,57,0)');
+    g.addColorStop(.45, `rgba(70,65,57,${0.02 + rand() * 0.035})`);
+    g.addColorStop(1, 'rgba(70,65,57,0)');
     ctx.fillStyle = g;
-    ctx.fillRect(x - 10, 0, 36, tamanho);
+    ctx.fillRect(0, y, tamanho, 28);
   }
 
   const textura = new THREE.CanvasTexture(canvas);
   textura.wrapS = textura.wrapT = THREE.RepeatWrapping;
-  textura.repeat.set(1.15, 3.2);
+  textura.repeat.set(3, 2);
   textura.colorSpace = THREE.SRGBColorSpace;
-  textura.anisotropy = 2;
   return textura;
 }
 
-function criarTexturaLua() {
+function texturaPiso() {
   const tamanho = 256;
   const canvas = document.createElement('canvas');
-  canvas.width = tamanho;
-  canvas.height = tamanho;
+  canvas.width = canvas.height = tamanho;
   const ctx = canvas.getContext('2d');
-  const rand = aleatorio(1902);
-  const centro = tamanho / 2;
-  const raio = tamanho * 0.45;
+  const rand = aleatorio(4451);
+  ctx.fillStyle = '#605d56';
+  ctx.fillRect(0, 0, tamanho, tamanho);
 
-  const brilho = ctx.createRadialGradient(centro * 0.82, centro * 0.74, 4, centro, centro, raio);
-  brilho.addColorStop(0, '#fffbed');
-  brilho.addColorStop(0.52, '#e8e4d7');
-  brilho.addColorStop(0.87, '#b8b6ad');
-  brilho.addColorStop(1, '#70716c');
-  ctx.fillStyle = brilho;
-  ctx.beginPath();
-  ctx.arc(centro, centro, raio, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(centro, centro, raio, 0, Math.PI * 2);
-  ctx.clip();
-
-  for (let i = 0; i < 85; i++) {
-    const angulo = rand() * Math.PI * 2;
-    const distancia = Math.sqrt(rand()) * raio * 0.92;
-    const x = centro + Math.cos(angulo) * distancia;
-    const y = centro + Math.sin(angulo) * distancia;
-    const r = 1.4 + rand() * 10;
-    ctx.fillStyle = `rgba(38,40,38,${0.035 + rand() * 0.1})`;
-    ctx.beginPath();
-    ctx.ellipse(x, y, r, r * (0.6 + rand() * 0.42), rand() * Math.PI, 0, Math.PI * 2);
-    ctx.fill();
+  const modulo = 32;
+  for (let y = 0; y < tamanho; y += modulo) {
+    for (let x = 0; x < tamanho; x += modulo) {
+      const v = 82 + Math.floor(rand() * 12);
+      ctx.fillStyle = `rgb(${v},${v - 2},${v - 6})`;
+      ctx.fillRect(x + 1, y + 1, modulo - 2, modulo - 2);
+      ctx.strokeStyle = 'rgba(28,28,27,.34)';
+      ctx.strokeRect(x + .5, y + .5, modulo - 1, modulo - 1);
+    }
   }
 
-  ctx.globalCompositeOperation = 'multiply';
-  const sombra = ctx.createLinearGradient(0, 0, tamanho, 0);
-  sombra.addColorStop(0, 'rgba(8,14,18,.72)');
-  sombra.addColorStop(0.3, 'rgba(12,16,17,.16)');
-  sombra.addColorStop(0.68, 'rgba(0,0,0,0)');
-  ctx.fillStyle = sombra;
-  ctx.fillRect(0, 0, tamanho, tamanho);
-  ctx.restore();
+  for (let i = 0; i < 500; i++) {
+    ctx.fillStyle = `rgba(20,20,19,${rand() * .045})`;
+    ctx.fillRect(rand() * tamanho, rand() * tamanho, .5 + rand() * 2, .5 + rand() * 2);
+  }
 
+  const textura = new THREE.CanvasTexture(canvas);
+  textura.wrapS = textura.wrapT = THREE.RepeatWrapping;
+  textura.repeat.set(7, 14);
+  textura.colorSpace = THREE.SRGBColorSpace;
+  return textura;
+}
+
+function texturaMadeira() {
+  const tamanho = 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = tamanho;
+  const ctx = canvas.getContext('2d');
+  const rand = aleatorio(7781);
+  ctx.fillStyle = '#8d7253';
+  ctx.fillRect(0, 0, tamanho, tamanho);
+  for (let y = 0; y < tamanho; y++) {
+    const a = 0.025 + Math.sin(y * .17) * .01 + rand() * .016;
+    ctx.strokeStyle = `rgba(63,39,24,${a})`;
+    ctx.beginPath();
+    ctx.moveTo(0, y + Math.sin(y * .08) * 2);
+    ctx.bezierCurveTo(64, y + rand() * 4, 170, y - rand() * 4, tamanho, y + Math.sin(y * .05) * 2);
+    ctx.stroke();
+  }
+  const textura = new THREE.CanvasTexture(canvas);
+  textura.wrapS = textura.wrapT = THREE.RepeatWrapping;
+  textura.repeat.set(2.2, 1);
+  textura.colorSpace = THREE.SRGBColorSpace;
+  return textura;
+}
+
+function texturaPapel() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 320;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#e8e4d9';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#4a4a46';
+  ctx.font = 'bold 13px Arial';
+  ctx.fillText('AVALIAÇÃO', 22, 28);
+  ctx.font = '10px Arial';
+  ctx.fillText('nome: __________________________', 22, 48);
+  ctx.strokeStyle = 'rgba(54,54,51,.28)';
+  for (let y = 78; y < 285; y += 28) {
+    ctx.beginPath();
+    ctx.moveTo(22, y);
+    ctx.lineTo(232, y);
+    ctx.stroke();
+  }
+  ctx.strokeStyle = '#a44d43';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(184, 42);
+  ctx.lineTo(226, 76);
+  ctx.moveTo(226, 42);
+  ctx.lineTo(184, 76);
+  ctx.stroke();
+  ctx.fillStyle = '#a44d43';
+  ctx.font = 'bold 20px Georgia';
+  ctx.fillText('6,0', 179, 102);
   const textura = new THREE.CanvasTexture(canvas);
   textura.colorSpace = THREE.SRGBColorSpace;
   return textura;
 }
 
-function criarCeu() {
-  const geometria = new THREE.SphereGeometry(1250, 28, 14);
-  const uniforms = {
-    uDawn: { value: 0 },
-    uSunDir: { value: new THREE.Vector3(0.4, 0.15, -0.9).normalize() },
-    uNight: { value: CEU_NOITE.clone() },
-    uHigh: { value: CEU_ALTO.clone() },
-    uDay: { value: CEU_DIA.clone() },
-    uHorizon: { value: HORIZONTE.clone() }
-  };
-
-  const material = new THREE.ShaderMaterial({
-    uniforms,
-    side: THREE.BackSide,
-    depthWrite: false,
-    vertexShader: `
-      varying vec3 vDir;
-      void main() {
-        vec4 mundo = modelMatrix * vec4(position, 1.0);
-        vDir = normalize(mundo.xyz - cameraPosition);
-        gl_Position = projectionMatrix * viewMatrix * mundo;
-      }
-    `,
-    fragmentShader: `
-      uniform float uDawn;
-      uniform vec3 uSunDir;
-      uniform vec3 uNight;
-      uniform vec3 uHigh;
-      uniform vec3 uDay;
-      uniform vec3 uHorizon;
-      varying vec3 vDir;
-
-      void main() {
-        float altura = clamp(vDir.y * 0.5 + 0.5, 0.0, 1.0);
-        float faixa = pow(1.0 - abs(vDir.y), 3.0);
-        vec3 noite = mix(uNight, uHigh, smoothstep(0.12, 0.92, altura));
-        vec3 dia = mix(uHorizon, uDay, smoothstep(0.04, 0.56, altura));
-        vec3 cor = mix(noite, dia, uDawn);
-        float sol = pow(max(dot(vDir, uSunDir), 0.0), 680.0);
-        float halo = pow(max(dot(vDir, uSunDir), 0.0), 18.0);
-        cor += vec3(1.0, 0.59, 0.28) * halo * uDawn * 0.28;
-        cor += vec3(1.0, 0.88, 0.66) * sol * uDawn * 2.1;
-        cor += vec3(0.17, 0.24, 0.26) * faixa * (1.0 - uDawn) * 0.12;
-        gl_FragColor = vec4(cor, 1.0);
-      }
-    `
-  });
-
-  return { mesh: new THREE.Mesh(geometria, material), uniforms };
-}
-
-function criarEstrelas(quantidade) {
-  const rand = aleatorio(93201);
-  const posicoes = new Float32Array(quantidade * 3);
-  const cores = new Float32Array(quantidade * 3);
-
-  for (let i = 0; i < quantidade; i++) {
-    const theta = rand() * Math.PI * 2;
-    const phi = Math.acos(0.08 + rand() * 0.86);
-    const raio = 760 + rand() * 260;
-    posicoes[i * 3] = Math.sin(phi) * Math.cos(theta) * raio;
-    posicoes[i * 3 + 1] = Math.cos(phi) * raio + 88;
-    posicoes[i * 3 + 2] = Math.sin(phi) * Math.sin(theta) * raio;
-
-    const quente = rand();
-    cores[i * 3] = 0.74 + quente * 0.26;
-    cores[i * 3 + 1] = 0.8 + quente * 0.16;
-    cores[i * 3 + 2] = 0.9 + (1 - quente) * 0.1;
-  }
-
-  const geometria = new THREE.BufferGeometry();
-  geometria.setAttribute('position', new THREE.BufferAttribute(posicoes, 3));
-  geometria.setAttribute('color', new THREE.BufferAttribute(cores, 3));
-
-  const material = new THREE.PointsMaterial({
-    size: 1.25,
-    sizeAttenuation: true,
-    transparent: true,
-    opacity: 0.9,
-    depthWrite: false,
-    vertexColors: true,
-    blending: THREE.AdditiveBlending
-  });
-
-  return new THREE.Points(geometria, material);
-}
-
-function criarOceano(segmentos) {
-  const geometria = new THREE.PlaneGeometry(1180, 1180, segmentos, segmentos);
-  geometria.rotateX(-Math.PI / 2);
-
-  const uniforms = {
-    uTime: { value: 0 },
-    uDawn: { value: 0 },
-    uImpact: { value: 0 },
-    uSunDir: { value: new THREE.Vector3(0.4, 0.18, -0.9).normalize() },
-    uFogColor: { value: NEVOA_NOITE.clone() },
-    uSeaNight: { value: MAR_NOITE.clone() },
-    uSeaDay: { value: MAR_DIA.clone() },
-    uSkyNight: { value: CEU_ALTO.clone() },
-    uSkyDay: { value: CEU_DIA.clone() },
-    uHorizonDay: { value: HORIZONTE.clone() }
-  };
-
-  const material = new THREE.ShaderMaterial({
-    uniforms,
-    side: THREE.FrontSide,
-    vertexShader: `
-      uniform float uTime;
-      varying vec3 vWorld;
-      varying float vHeight;
-      varying float vCrest;
-
-      void onda(inout vec3 p, vec2 direcao, float amplitude, float comprimento, float velocidade, float inclinacao, inout float crista) {
-        float k = 6.28318530718 / comprimento;
-        vec2 d = normalize(direcao);
-        float fase = k * dot(d, p.xz) - uTime * velocidade;
-        float s = sin(fase);
-        float c = cos(fase);
-        p.x += d.x * amplitude * inclinacao * c;
-        p.z += d.y * amplitude * inclinacao * c;
-        p.y += amplitude * s;
-        crista += amplitude * max(s, 0.0);
-      }
-
-      void main() {
-        vec3 p = position;
-        float crista = 0.0;
-        onda(p, vec2(1.0, 0.28), 1.02, 34.0, 1.60, 0.74, crista);
-        onda(p, vec2(0.58, 1.0), 0.53, 18.0, 2.03, 0.67, crista);
-        onda(p, vec2(-0.46, 1.0), 0.24, 9.8, 2.76, 0.58, crista);
-        onda(p, vec2(1.0, -0.75), 0.10, 5.4, 3.62, 0.46, crista);
-
-        vec4 mundo = modelMatrix * vec4(p, 1.0);
-        vWorld = mundo.xyz;
-        vHeight = p.y;
-        vCrest = crista;
-        gl_Position = projectionMatrix * viewMatrix * mundo;
-      }
-    `,
-    fragmentShader: `
-      uniform float uTime;
-      uniform float uDawn;
-      uniform float uImpact;
-      uniform vec3 uSunDir;
-      uniform vec3 uFogColor;
-      uniform vec3 uSeaNight;
-      uniform vec3 uSeaDay;
-      uniform vec3 uSkyNight;
-      uniform vec3 uSkyDay;
-      uniform vec3 uHorizonDay;
-      varying vec3 vWorld;
-      varying float vHeight;
-      varying float vCrest;
-
-      float hash21(vec2 p) {
-        p = fract(p * vec2(123.34, 456.21));
-        p += dot(p, p + 45.32);
-        return fract(p.x * p.y);
-      }
-
-      void main() {
-        vec3 dx = dFdx(vWorld);
-        vec3 dy = dFdy(vWorld);
-        vec3 normal = normalize(cross(dx, dy));
-        if (normal.y < 0.0) normal *= -1.0;
-
-        float micA = sin(vWorld.x * 0.82 + vWorld.z * 0.41 + uTime * 2.4);
-        float micB = sin(vWorld.x * -0.37 + vWorld.z * 1.12 - uTime * 2.9);
-        float micC = sin(vWorld.x * 1.73 - vWorld.z * 0.31 + uTime * 3.7);
-        normal.xz += vec2(micA + micC * 0.45, micB - micC * 0.38) * 0.035;
-        normal = normalize(normal);
-
-        vec3 viewDir = normalize(cameraPosition - vWorld);
-        float ndv = max(dot(normal, viewDir), 0.0);
-        float fresnel = 0.025 + 0.975 * pow(1.0 - ndv, 4.8);
-
-        vec3 mar = mix(uSeaNight, uSeaDay, uDawn);
-        float profundidade = clamp(0.42 + vHeight * 0.11, 0.18, 0.78);
-        mar *= profundidade + 0.58;
-
-        float horizonte = pow(1.0 - max(normal.y, 0.0), 1.7);
-        vec3 ceu = mix(uSkyNight, uSkyDay, uDawn);
-        ceu = mix(ceu, uHorizonDay, uDawn * horizonte * 0.72);
-        vec3 cor = mix(mar, ceu, fresnel * 0.86);
-
-        vec3 refletido = reflect(-uSunDir, normal);
-        float alinhamento = max(dot(refletido, viewDir), 0.0);
-        float brilhoFino = pow(alinhamento, mix(170.0, 310.0, uDawn));
-        float brilhoLargo = pow(alinhamento, 22.0);
-        cor += vec3(1.0, 0.76, 0.5) * brilhoFino * (0.45 + uDawn * 4.2);
-        cor += vec3(0.55, 0.68, 0.72) * brilhoLargo * 0.08;
-
-        float ruido = hash21(floor(vWorld.xz * 0.44 + uTime * 0.22));
-        float branca = smoothstep(1.00 + ruido * 0.22, 1.55, vCrest);
-        branca *= smoothstep(0.08, 0.92, vHeight + 0.45);
-
-        float costa = 1.0 - smoothstep(-112.0, -58.0, vWorld.z);
-        float banda = sin(vWorld.z * 0.36 + vWorld.x * 0.085 + uTime * 0.67);
-        float quebra = smoothstep(0.12, 0.84, banda * 0.5 + 0.5);
-        quebra *= costa * (0.16 + uImpact * 0.84);
-        quebra *= 0.62 + hash21(floor(vWorld.xz * 0.19)) * 0.38;
-
-        float espumaTotal = clamp(branca * 0.78 + quebra * 0.88, 0.0, 0.92);
-        vec3 espuma = mix(vec3(0.72, 0.82, 0.84), vec3(0.94, 0.96, 0.93), uDawn);
-        cor = mix(cor, espuma, espumaTotal);
-
-        float distancia = length(cameraPosition - vWorld);
-        float nevoa = smoothstep(220.0, 860.0, distancia);
-        cor = mix(cor, uFogColor, nevoa * 0.84);
-
-        gl_FragColor = vec4(cor, 1.0);
-      }
-    `
-  });
-
-  const oceano = new THREE.Mesh(geometria, material);
-  oceano.frustumCulled = false;
-  return { oceano, uniforms };
-}
-
-function criarRochas() {
-  const textura = criarTexturaRocha();
-  const material = new THREE.MeshStandardMaterial({
-    color: 0x2b3334,
-    map: textura,
-    roughness: 0.78,
-    metalness: 0.02
-  });
-
-  const geometria = new THREE.IcosahedronGeometry(1, 2);
-  const instancias = [
-    [-27, 2.8, -96, 17, 8.8, 18, 0.28, 0.3, 0.05],
-    [-12, 1.7, -90, 12, 6.5, 13, -0.12, 1.1, -0.08],
-    [-39, 0.7, -88, 11, 5.2, 10, 0.11, 2.1, 0.04],
-    [-20, -0.7, -108, 22, 7.2, 20, -0.08, 0.7, 0.03],
-    [-48, -0.9, -102, 16, 5.6, 17, 0.06, 2.8, -0.05],
-    [-3, -1.2, -103, 10, 4.3, 11, -0.15, 1.8, 0.02]
-  ];
-
-  const malha = new THREE.InstancedMesh(geometria, material, instancias.length);
-  const dummy = new THREE.Object3D();
-
-  instancias.forEach(([x, y, z, sx, sy, sz, rx, ry, rz], i) => {
-    dummy.position.set(x, y, z);
-    dummy.scale.set(sx, sy, sz);
-    dummy.rotation.set(rx, ry, rz);
-    dummy.updateMatrix();
-    malha.setMatrixAt(i, dummy.matrix);
-  });
-
-  malha.instanceMatrix.needsUpdate = true;
-  return malha;
-}
-
-function criarSombraCosta() {
-  const grupo = new THREE.Group();
-  const material = new THREE.MeshBasicMaterial({
-    color: 0x020506,
-    transparent: true,
-    opacity: 0.38,
-    depthWrite: false
-  });
-
-  const dados = [
-    [-22, -96, 38, 23, 0.15],
-    [-44, -99, 28, 18, -0.2],
-    [-6, -94, 25, 16, 0.08]
-  ];
-
-  for (const [x, z, sx, sz, rot] of dados) {
-    const sombra = new THREE.Mesh(new THREE.CircleGeometry(1, 32), material);
-    sombra.rotation.x = -Math.PI / 2;
-    sombra.rotation.z = rot;
-    sombra.position.set(x, 0.08, z);
-    sombra.scale.set(sx, sz, 1);
-    grupo.add(sombra);
-  }
-
-  return grupo;
-}
-
-function criarFarol() {
-  const grupo = new THREE.Group();
-  grupo.position.set(-27, 7.5, -97);
-
-  const concreto = new THREE.MeshStandardMaterial({
-    color: 0xd4cdc0,
-    map: criarTexturaConcreto(),
-    roughness: 0.9,
-    metalness: 0.01
-  });
-  const metal = new THREE.MeshStandardMaterial({ color: 0x20282b, roughness: 0.48, metalness: 0.7 });
-  const vermelho = new THREE.MeshStandardMaterial({ color: 0x7b2b28, roughness: 0.66, metalness: 0.12 });
-  const vidro = new THREE.MeshBasicMaterial({
-    color: 0x9fb9be,
-    transparent: true,
-    opacity: 0.24,
-    depthWrite: false,
-    side: THREE.DoubleSide
-  });
-
-  const torre = new THREE.Mesh(new THREE.CylinderGeometry(2.15, 3.85, 22.5, 32, 4), concreto);
-  torre.position.y = 11.25;
-  grupo.add(torre);
-
-  const faixa = new THREE.Mesh(new THREE.CylinderGeometry(2.66, 2.94, 4.15, 32), vermelho);
-  faixa.position.y = 15.2;
-  grupo.add(faixa);
-
-  const base = new THREE.Mesh(new THREE.CylinderGeometry(4.2, 4.8, 1.3, 32), metal);
-  base.position.y = 0.65;
-  grupo.add(base);
-
-  const porta = new THREE.Mesh(new THREE.PlaneGeometry(1.22, 2.45), metal);
-  porta.position.set(0, 2.1, 3.49);
-  grupo.add(porta);
-
-  const janelaGeo = new THREE.PlaneGeometry(0.7, 1.05);
-  const janelaMat = new THREE.MeshStandardMaterial({
-    color: 0x22363e,
-    emissive: 0x0a171e,
-    emissiveIntensity: 0.34,
-    roughness: 0.22
-  });
-  const janelas = new THREE.InstancedMesh(janelaGeo, janelaMat, 3);
-  const alturas = [7.2, 11.3, 18.4];
-  const dummy = new THREE.Object3D();
-  alturas.forEach((y, i) => {
-    dummy.position.set(0, y, 2.86 - (y / 22) * 0.75);
-    dummy.updateMatrix();
-    janelas.setMatrixAt(i, dummy.matrix);
-  });
-  janelas.instanceMatrix.needsUpdate = true;
-  grupo.add(janelas);
-
-  const sacada = new THREE.Mesh(new THREE.CylinderGeometry(3.35, 3.35, 0.46, 36), metal);
-  sacada.position.y = 22.8;
-  grupo.add(sacada);
-
-  const lanterna = new THREE.Mesh(new THREE.CylinderGeometry(2.05, 2.05, 3.8, 24, 1, true), vidro);
-  lanterna.position.y = 24.75;
-  grupo.add(lanterna);
-
-  const teto = new THREE.Mesh(new THREE.ConeGeometry(2.92, 1.82, 32), vermelho);
-  teto.position.y = 27.55;
-  grupo.add(teto);
-
-  const aroBaixo = new THREE.Mesh(new THREE.TorusGeometry(2.94, 0.035, 4, 32), metal);
-  aroBaixo.rotation.x = Math.PI / 2;
-  aroBaixo.position.y = 23.25;
-  grupo.add(aroBaixo);
-
-  const aroAlto = aroBaixo.clone();
-  aroAlto.position.y = 24.15;
-  grupo.add(aroAlto);
-
-  const hasteGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.92, 4);
-  const hastes = new THREE.InstancedMesh(hasteGeo, metal, 16);
-  for (let i = 0; i < 16; i++) {
-    const angulo = (i / 16) * Math.PI * 2;
-    dummy.position.set(Math.cos(angulo) * 2.94, 23.7, Math.sin(angulo) * 2.94);
-    dummy.rotation.set(0, 0, 0);
-    dummy.updateMatrix();
-    hastes.setMatrixAt(i, dummy.matrix);
-  }
-  hastes.instanceMatrix.needsUpdate = true;
-  grupo.add(hastes);
-
-  const lenteMaterial = new THREE.MeshStandardMaterial({
-    color: 0xffefc8,
-    emissive: 0xffc96c,
-    emissiveIntensity: 7.5,
-    roughness: 0.16
-  });
-  const lente = new THREE.Mesh(new THREE.SphereGeometry(0.46, 16, 10), lenteMaterial);
-  lente.position.y = 24.78;
-  grupo.add(lente);
-
-  const luz = new THREE.PointLight(0xffd89a, 30, 70, 1.9);
-  luz.position.y = 24.78;
-  grupo.add(luz);
-
-  const pivoFeixe = new THREE.Group();
-  pivoFeixe.position.y = 24.78;
-  grupo.add(pivoFeixe);
-
-  const feixeGeo = new THREE.ConeGeometry(8.2, 112, 28, 1, true);
-  feixeGeo.translate(0, -56, 0);
-  feixeGeo.rotateX(Math.PI / 2);
-
-  const feixeMaterial = new THREE.ShaderMaterial({
-    transparent: true,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-    side: THREE.DoubleSide,
-    uniforms: {
-      uOpacity: { value: 0.15 },
-      uColor: { value: new THREE.Color(0xffe7b0) }
-    },
-    vertexShader: `
-      varying vec2 vUv;
-      void main() {
-        vUv = uv;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-      }
-    `,
-    fragmentShader: `
-      uniform float uOpacity;
-      uniform vec3 uColor;
-      varying vec2 vUv;
-      void main() {
-        float borda = smoothstep(0.0, 0.17, vUv.x) * smoothstep(1.0, 0.83, vUv.x);
-        float alcance = 1.0 - smoothstep(0.18, 1.0, vUv.y);
-        float pulso = 0.86 + 0.14 * sin(vUv.y * 19.0);
-        gl_FragColor = vec4(uColor, uOpacity * borda * alcance * pulso);
-      }
-    `
-  });
-
-  pivoFeixe.add(new THREE.Mesh(feixeGeo, feixeMaterial));
-
-  return { grupo, pivoFeixe, feixeMaterial, luz, lenteMaterial };
-}
-
-function criarSpray(quantidade) {
-  const rand = aleatorio(7771);
-  const posicoes = new Float32Array(quantidade * 3);
-  const sementes = new Float32Array(quantidade);
-  const direcoes = new Float32Array(quantidade * 2);
-  const regioes = [
-    [-27, 1.2, -91],
-    [-16, 1.0, -89],
-    [-38, 1.0, -89],
-    [-20, 1.0, -102]
-  ];
-
-  for (let i = 0; i < quantidade; i++) {
-    const r = regioes[Math.floor(rand() * regioes.length)];
-    posicoes[i * 3] = r[0] + (rand() - 0.5) * 12;
-    posicoes[i * 3 + 1] = r[1] + rand() * 1.2;
-    posicoes[i * 3 + 2] = r[2] + (rand() - 0.5) * 10;
-    sementes[i] = rand();
-    const angulo = rand() * Math.PI * 2;
-    direcoes[i * 2] = Math.cos(angulo) * (0.35 + rand() * 0.8);
-    direcoes[i * 2 + 1] = Math.sin(angulo) * (0.35 + rand() * 0.8);
-  }
-
-  const geometria = new THREE.BufferGeometry();
-  geometria.setAttribute('position', new THREE.BufferAttribute(posicoes, 3));
-  geometria.setAttribute('aSeed', new THREE.BufferAttribute(sementes, 1));
-  geometria.setAttribute('aDir', new THREE.BufferAttribute(direcoes, 2));
-
-  const material = new THREE.ShaderMaterial({
-    transparent: true,
-    depthWrite: false,
-    uniforms: {
-      uTime: { value: 0 },
-      uDawn: { value: 0 },
-      uImpact: { value: 0 },
-      uPixelRatio: { value: 1 }
-    },
-    vertexShader: `
-      uniform float uTime;
-      uniform float uDawn;
-      uniform float uImpact;
-      uniform float uPixelRatio;
-      attribute float aSeed;
-      attribute vec2 aDir;
-      varying float vAlpha;
-      varying float vDawn;
-
-      void main() {
-        float ciclo = fract((uTime / 9.4) + aSeed * 0.065);
-        float nascimento = smoothstep(0.0, 0.045, ciclo);
-        float morte = 1.0 - smoothstep(0.17, 0.38, ciclo);
-        float vida = nascimento * morte * uImpact;
-        float t = clamp(ciclo / 0.38, 0.0, 1.0);
-
-        vec3 p = position;
-        p.x += aDir.x * t * 3.8;
-        p.z += aDir.y * t * 3.8;
-        p.y += sin(t * 3.14159265) * (2.2 + aSeed * 3.9);
-        p.y -= t * t * 1.2;
-
-        vec4 mv = modelViewMatrix * vec4(p, 1.0);
-        gl_Position = projectionMatrix * mv;
-        gl_PointSize = (1.5 + aSeed * 2.2) * uPixelRatio * (145.0 / max(30.0, -mv.z));
-        gl_PointSize = clamp(gl_PointSize, 1.0, 4.8);
-        vAlpha = vida * (0.18 + aSeed * 0.48);
-        vDawn = uDawn;
-      }
-    `,
-    fragmentShader: `
-      varying float vAlpha;
-      varying float vDawn;
-      void main() {
-        vec2 p = gl_PointCoord - 0.5;
-        float d = dot(p, p);
-        if (d > 0.25) discard;
-        float a = smoothstep(0.25, 0.025, d) * vAlpha;
-        vec3 cor = mix(vec3(0.70, 0.80, 0.82), vec3(0.96, 0.97, 0.94), vDawn);
-        gl_FragColor = vec4(cor, a);
-      }
-    `
-  });
-
-  return { pontos: new THREE.Points(geometria, material), material };
-}
-
-function criarLua() {
-  const material = new THREE.SpriteMaterial({
-    map: criarTexturaLua(),
-    transparent: true,
-    opacity: 0.92,
-    depthWrite: false,
-    fog: false
-  });
-  const lua = new THREE.Sprite(material);
-  lua.scale.set(38, 38, 1);
-  lua.position.set(150, 116, -470);
-  return lua;
-}
-
-function criarSol() {
+function texturaQuadro() {
   const canvas = document.createElement('canvas');
-  canvas.width = canvas.height = 128;
+  canvas.width = 1024;
+  canvas.height = 420;
   const ctx = canvas.getContext('2d');
-  const g = ctx.createRadialGradient(64, 64, 1, 64, 64, 64);
-  g.addColorStop(0, 'rgba(255,248,226,1)');
-  g.addColorStop(0.08, 'rgba(255,222,164,.96)');
-  g.addColorStop(0.32, 'rgba(255,171,102,.32)');
-  g.addColorStop(1, 'rgba(255,140,90,0)');
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, 128, 128);
-
+  const rand = aleatorio(551);
+  ctx.fillStyle = '#20352e';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  for (let i = 0; i < 1000; i++) {
+    ctx.fillStyle = `rgba(220,225,215,${rand() * .025})`;
+    ctx.fillRect(rand() * canvas.width, rand() * canvas.height, 1 + rand() * 3, 1);
+  }
+  ctx.fillStyle = 'rgba(238,235,222,.72)';
+  ctx.font = '28px Georgia';
+  ctx.fillText('aprender = perguntar', 58, 88);
+  ctx.font = '20px Georgia';
+  ctx.fillText('por quê?', 58, 132);
+  ctx.strokeStyle = 'rgba(238,235,222,.36)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(58, 163);
+  ctx.lineTo(438, 163);
+  ctx.stroke();
+  ctx.font = '18px Arial';
+  ctx.fillText('prova · 07:30', 58, 230);
+  ctx.fillText('tempo · 50 min', 58, 262);
   const textura = new THREE.CanvasTexture(canvas);
   textura.colorSpace = THREE.SRGBColorSpace;
-  const material = new THREE.SpriteMaterial({
-    map: textura,
+  return textura;
+}
+
+function texturaMeta() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 420;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#10171a';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#d7e3e7';
+  ctx.font = 'bold 22px Arial';
+  ctx.fillText('PAINEL — TURNO', 56, 60);
+  ctx.font = '14px Arial';
+  ctx.fillStyle = '#91a2a8';
+  ctx.fillText('META', 56, 118);
+  ctx.fillText('PRAZO', 340, 118);
+  ctx.fillText('PRODUÇÃO', 596, 118);
+  ctx.fillStyle = '#eef5f5';
+  ctx.font = '42px Georgia';
+  ctx.fillText('100%', 56, 180);
+  ctx.fillText('18:00', 340, 180);
+  ctx.fillText('87%', 596, 180);
+  ctx.strokeStyle = '#a74e43';
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(56, 250);
+  ctx.lineTo(876, 250);
+  ctx.stroke();
+  ctx.fillStyle = '#a74e43';
+  ctx.font = 'bold 18px Arial';
+  ctx.fillText('ATRASO', 56, 302);
+  const textura = new THREE.CanvasTexture(canvas);
+  textura.colorSpace = THREE.SRGBColorSpace;
+  return textura;
+}
+
+function criarSala(cena) {
+  const matParede = new THREE.MeshStandardMaterial({ color: COR_PAREDE.clone(), map: texturaParede(), roughness: .96 });
+  const matPiso = new THREE.MeshStandardMaterial({ color: 0xffffff, map: texturaPiso(), roughness: .82, metalness: .02 });
+  const matTeto = new THREE.MeshStandardMaterial({ color: 0xd3d0c7, roughness: .98 });
+
+  const piso = new THREE.Mesh(new THREE.PlaneGeometry(30, 60), matPiso);
+  piso.rotation.x = -Math.PI / 2;
+  cena.add(piso);
+
+  const teto = new THREE.Mesh(new THREE.PlaneGeometry(30, 60), matTeto);
+  teto.rotation.x = Math.PI / 2;
+  teto.position.y = 8.2;
+  cena.add(teto);
+
+  const frente = new THREE.Mesh(new THREE.PlaneGeometry(30, 8.2), matParede);
+  frente.position.set(0, 4.1, -30);
+  cena.add(frente);
+
+  const esquerda = new THREE.Mesh(new THREE.PlaneGeometry(60, 8.2), matParede.clone());
+  esquerda.rotation.y = Math.PI / 2;
+  esquerda.position.set(-15, 4.1, 0);
+  cena.add(esquerda);
+
+  const direita = esquerda.clone();
+  direita.rotation.y = -Math.PI / 2;
+  direita.position.x = 15;
+  cena.add(direita);
+
+  return { matParede, matPiso, matTeto };
+}
+
+function criarCarteiras(cena) {
+  const madeira = new THREE.MeshStandardMaterial({ color: 0xffffff, map: texturaMadeira(), roughness: .66, metalness: .02 });
+  const metal = new THREE.MeshStandardMaterial({ color: 0x3e4242, roughness: .58, metalness: .46 });
+  const cadeira = new THREE.MeshStandardMaterial({ color: 0x50645d, roughness: .78, metalness: .04 });
+  const papelMat = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    map: texturaPapel(),
+    roughness: .94,
+    side: THREE.DoubleSide,
     transparent: true,
-    opacity: 0,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-    fog: false
+    opacity: 1
   });
 
-  const sprite = new THREE.Sprite(material);
-  sprite.scale.set(92, 92, 1);
-  return sprite;
+  const colunas = [-8.4, -3.1, 3.1, 8.4];
+  const linhas = [15, 7, -1, -9, -17];
+  const total = colunas.length * linhas.length;
+  const tampos = new THREE.InstancedMesh(new THREE.BoxGeometry(3.25, .16, 1.65), madeira, total);
+  const pernas = new THREE.InstancedMesh(new THREE.BoxGeometry(.1, 1.55, .1), metal, total * 4);
+  const assentos = new THREE.InstancedMesh(new THREE.BoxGeometry(1.85, .12, 1.45), cadeira, total);
+  const encostos = new THREE.InstancedMesh(new THREE.BoxGeometry(1.85, 1.28, .11), cadeira, total);
+  const papeis = new THREE.InstancedMesh(new THREE.PlaneGeometry(1.05, 1.34), papelMat, total);
+  const base = [];
+  const dummy = new THREE.Object3D();
+  let i = 0;
+  let p = 0;
+
+  for (const z of linhas) {
+    for (const x of colunas) {
+      const rot = ((i % 3) - 1) * .008;
+      base.push({ x, z, rot, ruido: ((i * 17) % 11) / 11 });
+      dummy.position.set(x, 1.65, z);
+      dummy.rotation.y = rot;
+      dummy.updateMatrix();
+      tampos.setMatrixAt(i, dummy.matrix);
+
+      const offsets = [[-1.38, -.68], [1.38, -.68], [-1.38, .68], [1.38, .68]];
+      for (const [ox, oz] of offsets) {
+        dummy.position.set(x + ox, .84, z + oz);
+        dummy.rotation.set(0, 0, 0);
+        dummy.updateMatrix();
+        pernas.setMatrixAt(p++, dummy.matrix);
+      }
+
+      dummy.position.set(x, .92, z + 2.02);
+      dummy.rotation.set(0, 0, 0);
+      dummy.updateMatrix();
+      assentos.setMatrixAt(i, dummy.matrix);
+
+      dummy.position.set(x, 1.72, z + 2.66);
+      dummy.updateMatrix();
+      encostos.setMatrixAt(i, dummy.matrix);
+
+      dummy.position.set(x + .52, 1.745, z - .06);
+      dummy.rotation.set(-Math.PI / 2, 0, -.045 + (i % 4) * .019);
+      dummy.updateMatrix();
+      papeis.setMatrixAt(i, dummy.matrix);
+      i++;
+    }
+  }
+
+  tampos.instanceMatrix.needsUpdate = true;
+  pernas.instanceMatrix.needsUpdate = true;
+  assentos.instanceMatrix.needsUpdate = true;
+  encostos.instanceMatrix.needsUpdate = true;
+  papeis.instanceMatrix.needsUpdate = true;
+  cena.add(tampos, pernas, assentos, encostos, papeis);
+
+  return { tampos, pernas, assentos, encostos, papeis, papelMat, base, total, madeira, cadeira };
+}
+
+function criarMonitores(cena, base) {
+  const corpoMat = new THREE.MeshStandardMaterial({ color: 0x24292b, roughness: .5, metalness: .24 });
+  const telaMat = new THREE.MeshStandardMaterial({ color: 0x182126, emissive: 0x7d9aad, emissiveIntensity: .12, roughness: .24 });
+  const total = base.length;
+  const corpos = new THREE.InstancedMesh(new THREE.BoxGeometry(1.8, 1.08, .16), corpoMat, total);
+  const telas = new THREE.InstancedMesh(new THREE.PlaneGeometry(1.56, .82), telaMat, total);
+  const suportes = new THREE.InstancedMesh(new THREE.BoxGeometry(.12, .64, .12), corpoMat, total);
+  cena.add(corpos, telas, suportes);
+  return { corpos, telas, suportes, corpoMat, telaMat, total };
+}
+
+function criarQuadros(cena) {
+  const moldura = new THREE.Mesh(new THREE.BoxGeometry(13.6, 4.4, .18), new THREE.MeshStandardMaterial({ color: 0x403b32, roughness: .84 }));
+  moldura.position.set(0, 4.35, -29.65);
+  cena.add(moldura);
+
+  const escolaMat = new THREE.MeshStandardMaterial({ map: texturaQuadro(), roughness: .92, transparent: true, opacity: 1 });
+  const escola = new THREE.Mesh(new THREE.PlaneGeometry(13.1, 3.9), escolaMat);
+  escola.position.set(0, 4.35, -29.54);
+  cena.add(escola);
+
+  const trabalhoMat = new THREE.MeshStandardMaterial({ map: texturaMeta(), emissive: 0x2b3a40, emissiveIntensity: .16, roughness: .42, transparent: true, opacity: 0 });
+  const trabalho = new THREE.Mesh(new THREE.PlaneGeometry(13.1, 3.9), trabalhoMat);
+  trabalho.position.set(0, 4.35, -29.5);
+  cena.add(trabalho);
+
+  return { escolaMat, trabalhoMat };
+}
+
+function criarRelogio(cena) {
+  const grupo = new THREE.Group();
+  grupo.position.set(10.2, 5.7, -29.38);
+  const fundo = new THREE.Mesh(new THREE.CircleGeometry(1.05, 48), new THREE.MeshStandardMaterial({ color: 0xe0dcd2, roughness: .84 }));
+  grupo.add(fundo);
+  const aro = new THREE.Mesh(new THREE.RingGeometry(1.02, 1.12, 48), new THREE.MeshStandardMaterial({ color: 0x292b2b, roughness: .5, metalness: .34 }));
+  aro.position.z = .02;
+  grupo.add(aro);
+  const hora = new THREE.Mesh(new THREE.BoxGeometry(.055, .62, .035), new THREE.MeshBasicMaterial({ color: 0x222222 }));
+  hora.position.set(0, .26, .055);
+  hora.geometry.translate(0, -.26, 0);
+  grupo.add(hora);
+  const minuto = new THREE.Mesh(new THREE.BoxGeometry(.04, .82, .03), new THREE.MeshBasicMaterial({ color: 0x222222 }));
+  minuto.position.set(0, .36, .06);
+  minuto.geometry.translate(0, -.36, 0);
+  grupo.add(minuto);
+  const centro = new THREE.Mesh(new THREE.CircleGeometry(.08, 20), new THREE.MeshBasicMaterial({ color: 0x9c493f }));
+  centro.position.z = .08;
+  grupo.add(centro);
+  cena.add(grupo);
+  return { hora, minuto };
+}
+
+function criarJanelas(cena) {
+  const grupo = new THREE.Group();
+  const luzMat = new THREE.MeshBasicMaterial({ color: 0xb9c8c6, transparent: true, opacity: .45, side: THREE.DoubleSide });
+  const molduraMat = new THREE.MeshStandardMaterial({ color: 0x414442, roughness: .7, metalness: .18 });
+  const raios = [];
+
+  for (let i = 0; i < 4; i++) {
+    const z = 14 - i * 12;
+    const vidro = new THREE.Mesh(new THREE.PlaneGeometry(5.8, 4.25), luzMat.clone());
+    vidro.rotation.y = -Math.PI / 2;
+    vidro.position.set(14.91, 4.45, z);
+    grupo.add(vidro);
+
+    for (const yy of [-2.16, 2.16]) {
+      const barra = new THREE.Mesh(new THREE.BoxGeometry(.12, .12, 5.95), molduraMat);
+      barra.position.set(14.76, 4.45 + yy, z);
+      grupo.add(barra);
+    }
+    const vertical = new THREE.Mesh(new THREE.BoxGeometry(.12, 4.4, .12), molduraMat);
+    vertical.position.set(14.76, 4.45, z);
+    grupo.add(vertical);
+
+    const raioMat = new THREE.MeshBasicMaterial({ color: 0xffd19a, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
+    const raio = new THREE.Mesh(new THREE.PlaneGeometry(8, 17), raioMat);
+    raio.rotation.set(-.18, -.95, .05);
+    raio.position.set(8.8, 3.5, z - 3.2);
+    grupo.add(raio);
+    raios.push(raioMat);
+  }
+
+  cena.add(grupo);
+  return { grupo, luzMat, raios };
+}
+
+function criarFluorescentes(cena) {
+  const grupo = new THREE.Group();
+  const caixas = [];
+  const material = new THREE.MeshStandardMaterial({ color: 0xe5e1d5, emissive: COR_LUZ_ESCOLA.clone(), emissiveIntensity: 1.4, roughness: .5 });
+  for (let z = 18; z >= -18; z -= 9) {
+    for (const x of [-6, 6]) {
+      const lamp = new THREE.Mesh(new THREE.BoxGeometry(4.8, .08, .42), material);
+      lamp.position.set(x, 8.05, z);
+      grupo.add(lamp);
+      caixas.push(lamp);
+    }
+  }
+  cena.add(grupo);
+  return { grupo, material, caixas };
+}
+
+function criarPonto(cena) {
+  const grupo = new THREE.Group();
+  grupo.position.set(-11.8, 2.1, -29.2);
+  grupo.scale.setScalar(.001);
+  const caixa = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.3, .38), new THREE.MeshStandardMaterial({ color: 0x292e30, roughness: .5, metalness: .32 }));
+  grupo.add(caixa);
+  const tela = new THREE.Mesh(new THREE.PlaneGeometry(.95, .46), new THREE.MeshStandardMaterial({ color: 0x14272b, emissive: 0x58b6a9, emissiveIntensity: .6 }));
+  tela.position.set(0, .46, .2);
+  grupo.add(tela);
+  const ledMat = new THREE.MeshBasicMaterial({ color: 0xaa3f38 });
+  const led = new THREE.Mesh(new THREE.CircleGeometry(.08, 16), ledMat);
+  led.position.set(.46, -.55, .205);
+  grupo.add(led);
+  cena.add(grupo);
+  return { grupo, ledMat };
+}
+
+function criarPorta(cena) {
+  const molduraMat = new THREE.MeshStandardMaterial({ color: 0x37342f, roughness: .82 });
+  const portaMat = new THREE.MeshStandardMaterial({ color: 0x6b5946, roughness: .8 });
+  const brilhoMat = new THREE.MeshBasicMaterial({ color: 0xffd7a5, transparent: true, opacity: 0 });
+
+  const brilho = new THREE.Mesh(new THREE.PlaneGeometry(3.1, 5.5), brilhoMat);
+  brilho.position.set(-10.8, 2.75, -29.42);
+  cena.add(brilho);
+
+  const moldura = new THREE.Mesh(new THREE.BoxGeometry(3.35, 5.75, .2), molduraMat);
+  moldura.position.set(-10.8, 2.87, -29.45);
+  cena.add(moldura);
+
+  const fundo = new THREE.Mesh(new THREE.PlaneGeometry(2.85, 5.2), brilhoMat.clone());
+  fundo.material.opacity = .06;
+  fundo.position.set(-10.8, 2.7, -29.32);
+  cena.add(fundo);
+
+  const pivo = new THREE.Group();
+  pivo.position.set(-12.17, .1, -29.25);
+  const porta = new THREE.Mesh(new THREE.BoxGeometry(2.72, 5.18, .13), portaMat);
+  porta.geometry.translate(1.36, 2.59, 0);
+  pivo.add(porta);
+  cena.add(pivo);
+  return { pivo, brilhoMat, fundoMat: fundo.material };
+}
+
+function criarPoeira(cena, quantidade) {
+  const rand = aleatorio(33017);
+  const pos = new Float32Array(quantidade * 3);
+  for (let i = 0; i < quantidade; i++) {
+    pos[i * 3] = (rand() - .5) * 28;
+    pos[i * 3 + 1] = .5 + rand() * 7.2;
+    pos[i * 3 + 2] = -27 + rand() * 54;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const mat = new THREE.PointsMaterial({ color: 0xe8deca, size: .045, transparent: true, opacity: .28, depthWrite: false, sizeAttenuation: true });
+  const pontos = new THREE.Points(geo, mat);
+  cena.add(pontos);
+  return { pontos, mat };
 }
 
 export function criarCena(canvas) {
-  const perfil = detectarPerfil();
-  const renderer = new THREE.WebGLRenderer({
-    canvas,
-    antialias: perfil.nivel > 0,
-    alpha: false,
-    powerPreference: 'high-performance',
-    preserveDrawingBuffer: false
-  });
-
+  const cfg = perfil();
+  let dpr = Math.min(devicePixelRatio, cfg.dprMax);
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: cfg.antialias, alpha: false, powerPreference: 'high-performance' });
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.24;
-  renderer.shadowMap.enabled = false;
-
-  let dprAtual = Math.min(devicePixelRatio || 1, perfil.dprMax);
-  renderer.setPixelRatio(dprAtual);
+  renderer.toneMappingExposure = 1.08;
+  renderer.setPixelRatio(dpr);
   renderer.setSize(innerWidth, innerHeight, false);
 
   const cena = new THREE.Scene();
-  cena.background = NOITE.clone();
-  cena.fog = new THREE.FogExp2(NEVOA_NOITE.clone(), 0.00145);
+  cena.background = new THREE.Color(0x252522);
+  cena.fog = new THREE.Fog(0x353531, 24, 78);
 
-  const camera = new THREE.PerspectiveCamera(43, innerWidth / innerHeight, 0.1, 1800);
-  camera.position.set(38, 16, 66);
+  const camera = new THREE.PerspectiveCamera(innerWidth < 600 ? 50 : 44, innerWidth / innerHeight, .1, 130);
+  camera.position.set(0, 4.2, 24);
 
-  const ceu = criarCeu();
-  cena.add(ceu.mesh);
+  const sala = criarSala(cena);
+  const carteiras = criarCarteiras(cena);
+  const monitores = criarMonitores(cena, carteiras.base);
+  const quadros = criarQuadros(cena);
+  const relogio = criarRelogio(cena);
+  const janelas = criarJanelas(cena);
+  const fluorescentes = criarFluorescentes(cena);
+  const ponto = criarPonto(cena);
+  const porta = criarPorta(cena);
+  const poeira = criarPoeira(cena, cfg.poeira);
 
-  const estrelas = criarEstrelas(perfil.estrelas);
-  cena.add(estrelas);
+  const ambiente = new THREE.HemisphereLight(0xc9c2af, 0x3d3b36, 1.22);
+  cena.add(ambiente);
+  const luzFrente = new THREE.DirectionalLight(0xffddb0, 1.15);
+  luzFrente.position.set(9, 12, 18);
+  cena.add(luzFrente);
+  const luzFria = new THREE.PointLight(0xc9dded, 0, 42, 1.5);
+  luzFria.position.set(0, 7.2, -5);
+  cena.add(luzFria);
+  const luzPorta = new THREE.PointLight(0xffc27f, 0, 34, 1.7);
+  luzPorta.position.set(-10, 3.3, -24);
+  cena.add(luzPorta);
 
-  const lua = criarLua();
-  cena.add(lua);
-
-  const sol = criarSol();
-  cena.add(sol);
-
-  const oceano = criarOceano(perfil.segmentos);
-  cena.add(oceano.oceano);
-
-  const rochas = criarRochas();
-  cena.add(rochas);
-  cena.add(criarSombraCosta());
-
-  const farol = criarFarol();
-  cena.add(farol.grupo);
-
-  const spray = criarSpray(perfil.spray);
-  cena.add(spray.pontos);
-
-  const hemisferio = new THREE.HemisphereLight(0x7994a5, 0x0a1113, 0.66);
-  cena.add(hemisferio);
-
-  const direcional = new THREE.DirectionalLight(0xb8d1dd, 1.0);
-  direcional.position.set(90, 120, 60);
-  cena.add(direcional);
-
-  const vetorSol = new THREE.Vector3();
-  const alvoAtual = new THREE.Vector3(-21, 8, -94);
-  const posicaoCamera = camera.position.clone();
-  const alvoDesejado = new THREE.Vector3();
-  const cameraDesejada = new THREE.Vector3();
-  const corHemisferioDia = new THREE.Color(0xcbdde0);
-  const corChaoDia = new THREE.Color(0x514c45);
-  const corHemisferioNoite = new THREE.Color(0x7994a5);
-  const corChaoNoite = new THREE.Color(0x0a1113);
-  const corDirecionalNoite = new THREE.Color(0xb8d1dd);
-  const corDirecionalDia = new THREE.Color(0xffd0a3);
-
-  let tempoAcumulado = 0;
-  let ultimoTempo = performance.now() * 0.001;
-  let ultimoRender = 0;
-  let acumuladorFrame = 0;
-  let amostrasFrame = 0;
-  let ultimaAdaptacao = 0;
+  const cameraAtual = camera.position.clone();
+  const alvoAtual = new THREE.Vector3(0, 2.5, -8);
+  const dummy = new THREE.Object3D();
+  const inicio = performance.now() * .001;
+  let ultimo = inicio;
+  let quadro = 0;
+  let acumulado = 0;
 
   const keyframes = [
-    { p: 0.00, c: [38, 16, 66], a: [-20, 8, -94] },
-    { p: 0.23, c: [27, 12, 34], a: [-20, 7, -96] },
-    { p: 0.48, c: [11, 8, 4], a: [-18, 5, -93] },
-    { p: 0.73, c: [-1, 14, -20], a: [-27, 17, -98] },
-    { p: 1.00, c: [22, 22, 12], a: [-18, 6, -112] }
+    { p: 0, c: [0, 4.3, 24], a: [0, 2.4, -12] },
+    { p: .2, c: [-1.5, 3.8, 15], a: [-2, 2.1, -10] },
+    { p: .4, c: [1.6, 3.35, 6], a: [0, 2.25, -15] },
+    { p: .62, c: [-1.2, 3.55, 1], a: [0, 2.7, -21] },
+    { p: .8, c: [2.2, 3.7, -5], a: [-1.5, 2.8, -25] },
+    { p: 1, c: [-4.8, 3.6, -12], a: [-10.4, 2.8, -29] }
   ];
 
-  function amostrarCamera(progresso) {
+  function amostrar(progresso, ponteiro) {
     let a = keyframes[0];
     let b = keyframes[keyframes.length - 1];
-
     for (let i = 0; i < keyframes.length - 1; i++) {
       if (progresso >= keyframes[i].p && progresso <= keyframes[i + 1].p) {
         a = keyframes[i];
@@ -851,162 +561,175 @@ export function criarCena(canvas) {
         break;
       }
     }
-
     const t = suavizar(a.p, b.p, progresso);
-    cameraDesejada.set(
-      interpolar(a.c[0], b.c[0], t),
-      interpolar(a.c[1], b.c[1], t),
-      interpolar(a.c[2], b.c[2], t)
-    );
-    alvoDesejado.set(
-      interpolar(a.a[0], b.a[0], t),
-      interpolar(a.a[1], b.a[1], t),
-      interpolar(a.a[2], b.a[2], t)
-    );
+    return {
+      c: new THREE.Vector3(
+        interpolar(a.c[0], b.c[0], t) + ponteiro.x * .72,
+        interpolar(a.c[1], b.c[1], t) + ponteiro.y * .36,
+        interpolar(a.c[2], b.c[2], t)
+      ),
+      a: new THREE.Vector3(
+        interpolar(a.a[0], b.a[0], t) + ponteiro.x * .35,
+        interpolar(a.a[1], b.a[1], t) + ponteiro.y * .18,
+        interpolar(a.a[2], b.a[2], t)
+      )
+    };
   }
 
-  function adaptarResolucao(agora) {
-    if (agora - ultimaAdaptacao < 1.6 || amostrasFrame < 30) return;
+  function atualizarCarteiras(progresso) {
+    const trabalho = suavizar(.48, .7, progresso);
+    const abrir = suavizar(.84, 1, progresso);
+    for (let i = 0; i < carteiras.total; i++) {
+      const base = carteiras.base[i];
+      const lado = base.x < 0 ? -1 : 1;
+      const x = base.x + lado * abrir * (1.6 + Math.abs(base.x) * .08);
+      const z = base.z + trabalho * ((i % 4) * .18 - .27);
 
-    const medio = acumuladorFrame / amostrasFrame;
-    const alvo = 1000 / perfil.fps;
+      dummy.position.set(x, 1.65, z);
+      dummy.rotation.set(0, base.rot * (1 - trabalho), 0);
+      dummy.updateMatrix();
+      carteiras.tampos.setMatrixAt(i, dummy.matrix);
 
-    if (medio > alvo * 1.18 && dprAtual > perfil.dprMin + 0.02) {
-      dprAtual = Math.max(perfil.dprMin, dprAtual - 0.08);
-      renderer.setPixelRatio(dprAtual);
-      renderer.setSize(innerWidth, innerHeight, false);
-    } else if (medio < alvo * 0.82 && dprAtual < perfil.dprMax - 0.02) {
-      dprAtual = Math.min(perfil.dprMax, dprAtual + 0.04);
-      renderer.setPixelRatio(dprAtual);
-      renderer.setSize(innerWidth, innerHeight, false);
+      dummy.position.set(x, .92, z + 2.02);
+      dummy.rotation.set(0, 0, 0);
+      dummy.updateMatrix();
+      carteiras.assentos.setMatrixAt(i, dummy.matrix);
+
+      dummy.position.set(x, 1.72, z + 2.66);
+      dummy.updateMatrix();
+      carteiras.encostos.setMatrixAt(i, dummy.matrix);
+
+      const crescimento = Math.max(.001, trabalho * (1 - abrir * .72));
+      dummy.position.set(x, 2.33, z - .12);
+      dummy.scale.set(crescimento, crescimento, crescimento);
+      dummy.updateMatrix();
+      monitores.corpos.setMatrixAt(i, dummy.matrix);
+
+      dummy.position.set(x, 2.34, z - .205);
+      dummy.rotation.set(0, 0, 0);
+      dummy.updateMatrix();
+      monitores.telas.setMatrixAt(i, dummy.matrix);
+      monitores.telas.setMatrixAt(i, crescimento < .01 ? new THREE.Matrix4().makeScale(.001, .001, .001) : dummy.matrix);
+
+      dummy.position.set(x, 1.92, z - .12);
+      dummy.scale.set(crescimento, crescimento, crescimento);
+      dummy.updateMatrix();
+      monitores.suportes.setMatrixAt(i, dummy.matrix);
+      dummy.scale.set(1, 1, 1);
     }
+    carteiras.tampos.instanceMatrix.needsUpdate = true;
+    carteiras.assentos.instanceMatrix.needsUpdate = true;
+    carteiras.encostos.instanceMatrix.needsUpdate = true;
+    monitores.corpos.instanceMatrix.needsUpdate = true;
+    monitores.telas.instanceMatrix.needsUpdate = true;
+    monitores.suportes.instanceMatrix.needsUpdate = true;
+    carteiras.papelMat.opacity = 1 - suavizar(.35, .58, progresso);
+  }
 
-    acumuladorFrame = 0;
-    amostrasFrame = 0;
-    ultimaAdaptacao = agora;
+  function atualizarRelogio(progresso) {
+    const minutosInicio = 6 * 60 + 48;
+    const minutosFim = 18 * 60 + 46;
+    const total = interpolar(minutosInicio, minutosFim, suavizar(0, .86, progresso));
+    const minutos = total % 60;
+    const horas = (total / 60) % 12;
+    relogio.minuto.rotation.z = -minutos / 60 * Math.PI * 2;
+    relogio.hora.rotation.z = -(horas / 12) * Math.PI * 2;
+  }
+
+  function atualizarAmbiente(progresso, tempo) {
+    const trabalho = suavizar(.46, .72, progresso);
+    const libertar = suavizar(.84, 1, progresso);
+
+    sala.matParede.color.copy(COR_PAREDE).lerp(COR_PAREDE_FRIA, trabalho * (1 - libertar * .82));
+    cena.background.set(0x252522).lerp(new THREE.Color(0x1a2023), trabalho * .85).lerp(new THREE.Color(0x5b5a50), libertar * .45);
+    cena.fog.color.set(0x353531).lerp(new THREE.Color(0x293238), trabalho).lerp(new THREE.Color(0x9c8e79), libertar * .5);
+    cena.fog.near = interpolar(24, 30, libertar);
+    cena.fog.far = interpolar(78, 105, libertar);
+
+    fluorescentes.material.emissive.copy(COR_LUZ_ESCOLA).lerp(COR_LUZ_TRABALHO, trabalho);
+    fluorescentes.material.emissiveIntensity = interpolar(1.35, 2.15, trabalho) * (1 - libertar * .76);
+    ambiente.color.copy(COR_LUZ_ESCOLA).lerp(COR_LUZ_TRABALHO, trabalho).lerp(COR_MANHA, libertar);
+    ambiente.intensity = interpolar(1.18, 1.35, trabalho) + libertar * .56;
+    luzFrente.color.copy(COR_LUZ_ESCOLA).lerp(COR_LUZ_TRABALHO, trabalho).lerp(COR_MANHA, libertar);
+    luzFrente.intensity = interpolar(1.08, .52, trabalho) + libertar * 1.25;
+    luzFria.intensity = trabalho * 1.35 * (1 - libertar);
+    luzPorta.intensity = libertar * 3.1;
+    renderer.toneMappingExposure = interpolar(1.06, .94, trabalho) + libertar * .48;
+
+    quadros.escolaMat.opacity = 1 - suavizar(.48, .67, progresso);
+    quadros.trabalhoMat.opacity = suavizar(.5, .69, progresso) * (1 - libertar * .86);
+    quadros.trabalhoMat.emissiveIntensity = .14 + trabalho * .28;
+    monitores.telaMat.emissiveIntensity = .08 + trabalho * .42 * (1 - libertar * .95);
+
+    const pontoEscala = suavizar(.52, .64, progresso) * (1 - libertar * .85);
+    ponto.grupo.scale.setScalar(Math.max(.001, pontoEscala));
+    ponto.ledMat.color.set(tempo % 1 < .18 && trabalho > .4 ? 0xff5b4d : 0x873d37);
+
+    porta.pivo.rotation.y = -libertar * 1.28;
+    porta.brilhoMat.opacity = libertar * .88;
+    porta.fundoMat.opacity = .06 + libertar * .74;
+    janelas.raios.forEach((mat, i) => {
+      mat.opacity = libertar * (.06 + i * .012);
+    });
+    poeira.mat.opacity = .18 + libertar * .38;
+    poeira.pontos.position.y = Math.sin(tempo * .17) * .06;
+    poeira.pontos.rotation.y = Math.sin(tempo * .025) * .003;
+  }
+
+  function ajustarResolucao(delta) {
+    acumulado += delta;
+    quadro++;
+    if (quadro < 90) return;
+    const medio = acumulado / quadro;
+    if (medio > .025 && dpr > cfg.dprMin + .04) dpr = Math.max(cfg.dprMin, dpr - .08);
+    else if (medio < .017 && dpr < cfg.dprMax - .04) dpr = Math.min(cfg.dprMax, dpr + .04);
+    renderer.setPixelRatio(dpr);
+    quadro = 0;
+    acumulado = 0;
   }
 
   function atualizar(progresso, ponteiro) {
-    const agora = performance.now() * 0.001;
-    const delta = limitar(agora - ultimoTempo, 0, 0.05);
-    ultimoTempo = agora;
-    tempoAcumulado += delta;
+    const agora = performance.now() * .001;
+    const delta = limitar(agora - ultimo, 0, .05);
+    ultimo = agora;
+    const tempo = agora - inicio;
 
-    const tempo = tempoAcumulado;
-    const amanhecer = suavizar(0.32, 0.92, progresso);
-    const luzManha = suavizar(0.5, 1.0, progresso);
-    const fasePrincipal = (tempo % PERIODO_ONDA) / PERIODO_ONDA;
-    const faseSecundaria = ((tempo + 1.8) % 5.2) / 5.2;
-    const impactoPrincipal = pulsoCircular(fasePrincipal, 0.08, 0.03);
-    const impactoSecundario = pulsoCircular(faseSecundaria, 0.06, 0.04) * 0.5;
-    const impacto = Math.max(impactoPrincipal, impactoSecundario);
-    const espuma = Math.max(
-      pulsoCircular(fasePrincipal, 0.17, 0.14),
-      pulsoCircular(faseSecundaria, 0.17, 0.16) * 0.54
-    );
+    atualizarCarteiras(progresso);
+    atualizarRelogio(progresso);
+    atualizarAmbiente(progresso, tempo);
 
-    const elevacao = THREE.MathUtils.degToRad(interpolar(-7.5, 7.8, amanhecer));
-    const azimute = THREE.MathUtils.degToRad(118);
-    vetorSol.set(
-      Math.cos(elevacao) * Math.sin(azimute),
-      Math.sin(elevacao),
-      Math.cos(elevacao) * Math.cos(azimute)
-    ).normalize();
-
-    oceano.uniforms.uTime.value = tempo;
-    oceano.uniforms.uDawn.value = amanhecer;
-    oceano.uniforms.uImpact.value = impacto;
-    oceano.uniforms.uSunDir.value.copy(vetorSol);
-    oceano.uniforms.uFogColor.value.copy(NEVOA_NOITE).lerp(NEVOA_DIA, amanhecer);
-
-    ceu.uniforms.uDawn.value = amanhecer;
-    ceu.uniforms.uSunDir.value.copy(vetorSol);
-
-    spray.material.uniforms.uTime.value = tempo;
-    spray.material.uniforms.uDawn.value = amanhecer;
-    spray.material.uniforms.uImpact.value = impacto;
-
-    sol.position.copy(vetorSol).multiplyScalar(680);
-    sol.material.opacity = luzManha * 0.88;
-    lua.material.opacity = limitar(0.92 - amanhecer * 1.16, 0, 0.92);
-    estrelas.material.opacity = limitar(0.9 - amanhecer * 1.38, 0, 0.9);
-
-    direcional.position.copy(vetorSol).multiplyScalar(140);
-    direcional.color.copy(corDirecionalNoite).lerp(corDirecionalDia, amanhecer);
-    direcional.intensity = interpolar(1.0, 2.5, luzManha);
-    hemisferio.intensity = interpolar(0.66, 1.5, amanhecer);
-    hemisferio.color.copy(corHemisferioNoite).lerp(corHemisferioDia, amanhecer);
-    hemisferio.groundColor.copy(corChaoNoite).lerp(corChaoDia, amanhecer);
-
-    cena.fog.color.copy(NEVOA_NOITE).lerp(NEVOA_DIA, amanhecer);
-    cena.fog.density = interpolar(0.00145, 0.00078, amanhecer);
-    renderer.toneMappingExposure = interpolar(1.24, 1.5, amanhecer);
-
-    farol.pivoFeixe.rotation.y = tempo * 0.34;
-    farol.feixeMaterial.uniforms.uOpacity.value = interpolar(0.16, 0.012, suavizar(0.54, 0.95, progresso));
-    farol.luz.intensity = interpolar(30, 3, suavizar(0.56, 1, progresso));
-    farol.lenteMaterial.emissiveIntensity = interpolar(7.5, 1.0, suavizar(0.56, 1, progresso));
-
-    amostrarCamera(progresso);
-    cameraDesejada.x += ponteiro.x * 2.3;
-    cameraDesejada.y += ponteiro.y * 1.05;
-    alvoDesejado.x += ponteiro.x * 1.25;
-    alvoDesejado.y += ponteiro.y * 0.58;
-
-    posicaoCamera.lerp(cameraDesejada, 0.05);
-    alvoAtual.lerp(alvoDesejado, 0.055);
-    camera.position.copy(posicaoCamera);
+    const amostra = amostrar(progresso, ponteiro);
+    cameraAtual.lerp(amostra.c, .055);
+    alvoAtual.lerp(amostra.a, .06);
+    camera.position.copy(cameraAtual);
     camera.lookAt(alvoAtual);
 
-    const intervalo = 1 / perfil.fps;
-    const deveRenderizar = agora - ultimoRender >= intervalo;
-
-    if (deveRenderizar) {
-      const inicio = performance.now();
-      renderer.render(cena, camera);
-      const custo = performance.now() - inicio;
-      acumuladorFrame += custo;
-      amostrasFrame++;
-      ultimoRender = agora;
-      adaptarResolucao(agora);
-    }
+    renderer.render(cena, camera);
+    ajustarResolucao(delta);
 
     return {
-      impacto,
-      espuma,
-      vento: 0.4 + Math.sin(tempo * 0.21) * 0.08,
-      fase: fasePrincipal,
-      qualidade: perfil.nivel,
-      dpr: dprAtual
+      trabalho: suavizar(.46, .72, progresso),
+      abertura: suavizar(.84, 1, progresso),
+      relogio: tempo
     };
   }
 
   function redimensionar() {
-    const largura = innerWidth;
-    const altura = innerHeight;
-    camera.aspect = largura / altura;
-    camera.fov = largura < 600 ? 50 : largura > 1800 ? 40 : 43;
+    camera.aspect = innerWidth / innerHeight;
+    camera.fov = innerWidth < 600 ? 50 : innerWidth > 1800 ? 41 : 44;
     camera.updateProjectionMatrix();
-
-    dprAtual = limitar(dprAtual, perfil.dprMin, Math.min(devicePixelRatio || 1, perfil.dprMax));
-    renderer.setPixelRatio(dprAtual);
-    renderer.setSize(largura, altura, false);
-    spray.material.uniforms.uPixelRatio.value = dprAtual;
+    dpr = Math.min(devicePixelRatio, cfg.dprMax);
+    renderer.setPixelRatio(dpr);
+    renderer.setSize(innerWidth, innerHeight, false);
   }
-
-  spray.material.uniforms.uPixelRatio.value = dprAtual;
 
   function destruir() {
     cena.traverse((objeto) => {
-      objeto.geometry?.dispose();
-      if (!objeto.material) return;
-      const materiais = Array.isArray(objeto.material) ? objeto.material : [objeto.material];
-
+      objeto.geometry?.dispose?.();
+      const materiais = objeto.material ? (Array.isArray(objeto.material) ? objeto.material : [objeto.material]) : [];
       materiais.forEach((material) => {
-        for (const chave of ['map', 'alphaMap', 'normalMap', 'roughnessMap', 'metalnessMap', 'emissiveMap']) {
-          material[chave]?.dispose?.();
-        }
-        material.dispose();
+        Object.values(material).forEach((valor) => valor?.isTexture && valor.dispose());
+        material.dispose?.();
       });
     });
     renderer.dispose();
