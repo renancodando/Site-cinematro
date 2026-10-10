@@ -1,38 +1,23 @@
-function criarRuido(contexto, segundos = 3.2) {
-  const taxa = contexto.sampleRate;
-  const tamanho = Math.floor(taxa * segundos);
-  const buffer = contexto.createBuffer(1, tamanho, taxa);
+function ruido(contexto, segundos = 2.4) {
+  const tamanho = Math.floor(contexto.sampleRate * segundos);
+  const buffer = contexto.createBuffer(1, tamanho, contexto.sampleRate);
   const dados = buffer.getChannelData(0);
-  let anterior = 0;
-  let semente = 4871;
-
-  const random = () => {
-    semente = (semente * 16807) % 2147483647;
-    return (semente - 1) / 2147483646;
-  };
-
+  let semente = 4817;
   for (let i = 0; i < tamanho; i++) {
-    const branco = random() * 2 - 1;
-    anterior = (anterior + 0.022 * branco) / 1.022;
-    dados[i] = anterior * 2.2 + branco * 0.17;
+    semente = (semente * 16807) % 2147483647;
+    dados[i] = ((semente - 1) / 2147483646) * 2 - 1;
   }
-
   return buffer;
 }
 
-function conectarCamada(contexto, fonte, master, tipo, frequencia, q, ganho) {
+function camada(contexto, fonte, master, tipo, frequencia, q, ganho) {
   const filtro = contexto.createBiquadFilter();
   filtro.type = tipo;
   filtro.frequency.value = frequencia;
   filtro.Q.value = q;
-
   const volume = contexto.createGain();
   volume.gain.value = ganho;
-
-  fonte.connect(filtro);
-  filtro.connect(volume);
-  volume.connect(master);
-
+  fonte.connect(filtro).connect(volume).connect(master);
   return { filtro, volume };
 }
 
@@ -40,14 +25,17 @@ export function criarAudioAmbiente() {
   let contexto;
   let master;
   let fonte;
-  let mar;
-  let espuma;
-  let impacto;
-  let vento;
+  let sala;
+  let trabalho;
+  let exterior;
+  let hum;
+  let hum2;
+  let humGain;
+  let humGain2;
   let ativo = false;
   let iniciado = false;
+  let ultimoTick = -1;
   let ultimaAtualizacao = -1;
-  let ultimoCapitulo = 1;
 
   function iniciarNos() {
     const AudioContexto = window.AudioContext || window.webkitAudioContext;
@@ -59,91 +47,108 @@ export function criarAudioAmbiente() {
     master.connect(contexto.destination);
 
     fonte = contexto.createBufferSource();
-    fonte.buffer = criarRuido(contexto);
+    fonte.buffer = ruido(contexto);
     fonte.loop = true;
 
-    mar = conectarCamada(contexto, fonte, master, 'lowpass', 760, 0.38, 0.46);
-    espuma = conectarCamada(contexto, fonte, master, 'bandpass', 1760, 0.5, 0.025);
-    impacto = conectarCamada(contexto, fonte, master, 'lowpass', 230, 0.74, 0.008);
-    vento = conectarCamada(contexto, fonte, master, 'bandpass', 1210, 0.66, 0.024);
+    sala = camada(contexto, fonte, master, 'lowpass', 720, .34, .025);
+    trabalho = camada(contexto, fonte, master, 'bandpass', 1680, .62, 0);
+    exterior = camada(contexto, fonte, master, 'highpass', 560, .24, 0);
+
+    hum = contexto.createOscillator();
+    hum.type = 'sine';
+    hum.frequency.value = 60;
+    humGain = contexto.createGain();
+    humGain.gain.value = .0055;
+    hum.connect(humGain).connect(master);
+
+    hum2 = contexto.createOscillator();
+    hum2.type = 'sine';
+    hum2.frequency.value = 120;
+    humGain2 = contexto.createGain();
+    humGain2.gain.value = .0018;
+    hum2.connect(humGain2).connect(master);
 
     fonte.start();
+    hum.start();
+    hum2.start();
     iniciado = true;
     return true;
   }
 
-  function tocarSino(indice) {
-    if (!iniciado || !ativo || !contexto || contexto.state !== 'running') return;
-
+  function toque(frequencia = 1450, duracao = .028, volume = .018, tipo = 'square') {
+    if (!iniciado || !ativo) return;
     const agora = contexto.currentTime;
-    const frequenciaBase = 510 + (indice % 3) * 18;
+    const osc = contexto.createOscillator();
     const ganho = contexto.createGain();
-    const filtro = contexto.createBiquadFilter();
-    const sinoA = contexto.createOscillator();
-    const sinoB = contexto.createOscillator();
+    osc.type = tipo;
+    osc.frequency.value = frequencia;
+    ganho.gain.setValueAtTime(volume, agora);
+    ganho.gain.exponentialRampToValueAtTime(.0001, agora + duracao);
+    osc.connect(ganho).connect(master);
+    osc.start(agora);
+    osc.stop(agora + duracao + .01);
+  }
 
-    sinoA.type = 'sine';
-    sinoB.type = 'sine';
-    sinoA.frequency.setValueAtTime(frequenciaBase, agora);
-    sinoB.frequency.setValueAtTime(frequenciaBase * 1.495, agora);
-    sinoB.detune.setValueAtTime(-7, agora);
-
-    filtro.type = 'bandpass';
-    filtro.frequency.setValueAtTime(920, agora);
-    filtro.Q.setValueAtTime(0.72, agora);
-
-    ganho.gain.setValueAtTime(0.0001, agora);
-    ganho.gain.exponentialRampToValueAtTime(0.038, agora + 0.018);
-    ganho.gain.exponentialRampToValueAtTime(0.012, agora + 0.32);
-    ganho.gain.exponentialRampToValueAtTime(0.0001, agora + 1.25);
-
-    sinoA.connect(filtro);
-    sinoB.connect(filtro);
-    filtro.connect(ganho);
-    ganho.connect(master);
-
-    sinoA.start(agora);
-    sinoB.start(agora);
-    sinoA.stop(agora + 1.3);
-    sinoB.stop(agora + 1.3);
+  function sino(escritorio = false) {
+    if (!iniciado || !ativo) return;
+    const agora = contexto.currentTime;
+    const frequencias = escritorio ? [176, 352] : [720, 910, 1120];
+    frequencias.forEach((freq, i) => {
+      const osc = contexto.createOscillator();
+      const ganho = contexto.createGain();
+      osc.type = escritorio ? 'triangle' : 'sine';
+      osc.frequency.value = freq;
+      const volume = escritorio ? .025 / (i + 1) : .018 / (1 + i * .45);
+      ganho.gain.setValueAtTime(volume, agora);
+      ganho.gain.exponentialRampToValueAtTime(.0001, agora + (escritorio ? .22 : .72));
+      osc.connect(ganho).connect(master);
+      osc.start(agora);
+      osc.stop(agora + (escritorio ? .25 : .78));
+    });
   }
 
   async function alternar() {
     if (!iniciado && !iniciarNos()) return false;
     if (contexto.state === 'suspended') await contexto.resume();
-
     ativo = !ativo;
     const agora = contexto.currentTime;
     master.gain.cancelScheduledValues(agora);
     master.gain.setValueAtTime(master.gain.value, agora);
-    master.gain.linearRampToValueAtTime(ativo ? 0.2 : 0, agora + 0.55);
+    master.gain.linearRampToValueAtTime(ativo ? .42 : 0, agora + .55);
     return ativo;
   }
 
-  function atualizar(progresso, estadoMar = {}) {
+  function marcarCapitulo(capitulo) {
     if (!iniciado || !ativo) return;
-
-    const agora = contexto.currentTime;
-    if (ultimaAtualizacao >= 0 && agora - ultimaAtualizacao < 0.045) return;
-    ultimaAtualizacao = agora;
-
-    const nivelImpacto = Math.max(0, Math.min(1, estadoMar.impacto ?? 0));
-    const nivelEspuma = Math.max(0, Math.min(1, estadoMar.espuma ?? 0));
-    const nivelVento = Math.max(0, Math.min(1, estadoMar.vento ?? 0.4));
-    const proximidade = 0.58 + Math.sin(progresso * Math.PI) * 0.42;
-
-    mar.volume.gain.setTargetAtTime(0.34 + proximidade * 0.2, agora, 0.12);
-    impacto.volume.gain.setTargetAtTime(0.006 + nivelImpacto * 0.48, agora, nivelImpacto > 0.2 ? 0.018 : 0.16);
-    espuma.volume.gain.setTargetAtTime(0.018 + nivelEspuma * 0.2, agora, nivelEspuma > 0.12 ? 0.055 : 0.22);
-    vento.volume.gain.setTargetAtTime(0.018 + nivelVento * 0.052, agora, 0.38);
-    impacto.filtro.frequency.setTargetAtTime(170 + nivelImpacto * 310, agora, 0.035);
-    espuma.filtro.frequency.setTargetAtTime(1540 + nivelEspuma * 520, agora, 0.08);
+    if (capitulo === 2 || capitulo === 3) sino(false);
+    if (capitulo === 4 || capitulo === 5) sino(true);
+    if (capitulo === 6) {
+      toque(520, .14, .012, 'sine');
+      setTimeout(() => toque(660, .18, .009, 'sine'), 110);
+    }
   }
 
-  function marcarCapitulo(indice) {
-    if (indice === ultimoCapitulo) return;
-    ultimoCapitulo = indice;
-    tocarSino(indice);
+  function atualizar(progresso, estado = {}) {
+    if (!iniciado || !ativo) return;
+    const agora = contexto.currentTime;
+    const trabalhoNivel = Math.max(0, Math.min(1, estado.trabalho ?? 0));
+    const abertura = Math.max(0, Math.min(1, estado.abertura ?? 0));
+
+    if (agora - ultimaAtualizacao > .06) {
+      ultimaAtualizacao = agora;
+      sala.volume.gain.setTargetAtTime(.022 + (1 - trabalhoNivel) * .018, agora, .22);
+      trabalho.volume.gain.setTargetAtTime(trabalhoNivel * .035 * (1 - abertura), agora, .22);
+      trabalho.filtro.frequency.setTargetAtTime(1460 + trabalhoNivel * 520, agora, .28);
+      exterior.volume.gain.setTargetAtTime(abertura * .035, agora, .34);
+      humGain.gain.setTargetAtTime((.0045 + trabalhoNivel * .007) * (1 - abertura * .92), agora, .25);
+      humGain2.gain.setTargetAtTime((.0015 + trabalhoNivel * .003) * (1 - abertura * .94), agora, .25);
+    }
+
+    const segundo = Math.floor(agora);
+    if (segundo !== ultimoTick && abertura < .7) {
+      ultimoTick = segundo;
+      toque(trabalhoNivel > .55 ? 1180 : 1460, .018, trabalhoNivel > .55 ? .006 : .009, 'square');
+    }
   }
 
   function desligar() {
@@ -151,7 +156,7 @@ export function criarAudioAmbiente() {
     const agora = contexto.currentTime;
     master.gain.cancelScheduledValues(agora);
     master.gain.setValueAtTime(master.gain.value, agora);
-    master.gain.linearRampToValueAtTime(0, agora + 0.28);
+    master.gain.linearRampToValueAtTime(0, agora + .25);
     ativo = false;
   }
 
@@ -160,8 +165,6 @@ export function criarAudioAmbiente() {
     atualizar,
     marcarCapitulo,
     desligar,
-    get ativo() {
-      return ativo;
-    }
+    get ativo() { return ativo; }
   };
 }
