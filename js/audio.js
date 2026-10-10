@@ -1,4 +1,4 @@
-function ruidoMarrom(contexto, segundos = 7) {
+function criarRuido(contexto, segundos, tipo = 'marrom', sementeInicial = 4871) {
   const taxa = contexto.sampleRate;
   const tamanho = Math.floor(taxa * segundos);
   const buffer = contexto.createBuffer(2, tamanho, taxa);
@@ -6,7 +6,7 @@ function ruidoMarrom(contexto, segundos = 7) {
   for (let canal = 0; canal < 2; canal++) {
     const dados = buffer.getChannelData(canal);
     let anterior = 0;
-    let semente = canal ? 9137 : 4871;
+    let semente = sementeInicial + canal * 4261;
 
     const random = () => {
       semente = (semente * 16807) % 2147483647;
@@ -15,21 +15,33 @@ function ruidoMarrom(contexto, segundos = 7) {
 
     for (let i = 0; i < tamanho; i++) {
       const branco = random() * 2 - 1;
-      anterior = (anterior + 0.018 * branco) / 1.018;
-      dados[i] = anterior * 3.25;
+      if (tipo === 'marrom') {
+        anterior = (anterior + 0.02 * branco) / 1.02;
+        dados[i] = anterior * 3.15;
+      } else {
+        dados[i] = branco * 0.72;
+      }
     }
   }
 
   return buffer;
 }
 
+function fonteLoop(contexto, buffer) {
+  const fonte = contexto.createBufferSource();
+  fonte.buffer = buffer;
+  fonte.loop = true;
+  return fonte;
+}
+
 export function criarAudioAmbiente() {
   let contexto;
   let master;
-  let fonte;
-  let vento;
-  let grave;
-  let lfo;
+  let ganhoMar;
+  let ganhoEspuma;
+  let ganhoImpacto;
+  let ganhoVento;
+  let filtroImpacto;
   let ativo = false;
   let iniciado = false;
 
@@ -42,59 +54,46 @@ export function criarAudioAmbiente() {
     master.gain.value = 0;
     master.connect(contexto.destination);
 
-    fonte = contexto.createBufferSource();
-    fonte.buffer = ruidoMarrom(contexto);
-    fonte.loop = true;
-
+    const mar = fonteLoop(contexto, criarRuido(contexto, 9, 'marrom', 4871));
     const filtroMar = contexto.createBiquadFilter();
     filtroMar.type = 'lowpass';
-    filtroMar.frequency.value = 730;
-    filtroMar.Q.value = 0.38;
+    filtroMar.frequency.value = 860;
+    filtroMar.Q.value = 0.42;
+    ganhoMar = contexto.createGain();
+    ganhoMar.gain.value = 0.44;
+    mar.connect(filtroMar).connect(ganhoMar).connect(master);
 
-    const ganhoMar = contexto.createGain();
-    ganhoMar.gain.value = 0.72;
+    const espuma = fonteLoop(contexto, criarRuido(contexto, 7, 'branco', 8411));
+    const filtroEspuma = contexto.createBiquadFilter();
+    filtroEspuma.type = 'bandpass';
+    filtroEspuma.frequency.value = 1850;
+    filtroEspuma.Q.value = 0.5;
+    ganhoEspuma = contexto.createGain();
+    ganhoEspuma.gain.value = 0.035;
+    espuma.connect(filtroEspuma).connect(ganhoEspuma).connect(master);
 
-    fonte.connect(filtroMar);
-    filtroMar.connect(ganhoMar);
-    ganhoMar.connect(master);
+    const impacto = fonteLoop(contexto, criarRuido(contexto, 6, 'marrom', 1229));
+    filtroImpacto = contexto.createBiquadFilter();
+    filtroImpacto.type = 'lowpass';
+    filtroImpacto.frequency.value = 240;
+    filtroImpacto.Q.value = 0.7;
+    ganhoImpacto = contexto.createGain();
+    ganhoImpacto.gain.value = 0.01;
+    impacto.connect(filtroImpacto).connect(ganhoImpacto).connect(master);
 
-    vento = contexto.createBufferSource();
-    vento.buffer = ruidoMarrom(contexto, 5);
-    vento.loop = true;
-
+    const vento = fonteLoop(contexto, criarRuido(contexto, 5, 'branco', 5939));
     const filtroVento = contexto.createBiquadFilter();
     filtroVento.type = 'bandpass';
-    filtroVento.frequency.value = 1580;
-    filtroVento.Q.value = 0.58;
+    filtroVento.frequency.value = 1260;
+    filtroVento.Q.value = 0.74;
+    ganhoVento = contexto.createGain();
+    ganhoVento.gain.value = 0.035;
+    vento.connect(filtroVento).connect(ganhoVento).connect(master);
 
-    const ganhoVento = contexto.createGain();
-    ganhoVento.gain.value = 0.11;
-
-    vento.connect(filtroVento);
-    filtroVento.connect(ganhoVento);
-    ganhoVento.connect(master);
-
-    grave = contexto.createOscillator();
-    grave.type = 'sine';
-    grave.frequency.value = 43;
-
-    const ganhoGrave = contexto.createGain();
-    ganhoGrave.gain.value = 0.018;
-    grave.connect(ganhoGrave);
-    ganhoGrave.connect(master);
-
-    lfo = contexto.createOscillator();
-    const lfoGain = contexto.createGain();
-    lfo.type = 'sine';
-    lfo.frequency.value = 0.075;
-    lfoGain.gain.value = 0.055;
-    lfo.connect(lfoGain);
-    lfoGain.connect(ganhoMar.gain);
-
-    fonte.start();
+    mar.start();
+    espuma.start();
+    impacto.start();
     vento.start();
-    grave.start();
-    lfo.start();
     iniciado = true;
     return true;
   }
@@ -107,21 +106,31 @@ export function criarAudioAmbiente() {
     const agora = contexto.currentTime;
     master.gain.cancelScheduledValues(agora);
     master.gain.setValueAtTime(master.gain.value, agora);
-    master.gain.linearRampToValueAtTime(ativo ? 0.12 : 0, agora + 0.8);
+    master.gain.linearRampToValueAtTime(ativo ? 0.22 : 0, agora + 0.75);
     return ativo;
   }
 
-  function atualizar(progresso) {
+  function atualizar(progresso, estadoMar = {}) {
     if (!iniciado || !ativo) return;
+
     const agora = contexto.currentTime;
-    const nivel = 0.105 + Math.sin(progresso * Math.PI) * 0.025;
-    master.gain.setTargetAtTime(nivel, agora, 0.7);
+    const impacto = Math.max(0, Math.min(1, estadoMar.impacto ?? 0));
+    const espuma = Math.max(0, Math.min(1, estadoMar.espuma ?? 0));
+    const vento = Math.max(0, Math.min(1, estadoMar.vento ?? 0.35));
+    const proximidadeCosta = 0.62 + Math.sin(progresso * Math.PI) * 0.38;
+
+    ganhoMar.gain.setTargetAtTime(0.38 + proximidadeCosta * 0.18, agora, 0.14);
+    ganhoImpacto.gain.setTargetAtTime(0.012 + impacto * 0.42, agora, impacto > 0.15 ? 0.025 : 0.22);
+    ganhoEspuma.gain.setTargetAtTime(0.025 + espuma * 0.19, agora, espuma > 0.12 ? 0.08 : 0.3);
+    ganhoVento.gain.setTargetAtTime(0.024 + vento * 0.055, agora, 0.5);
+    filtroImpacto.frequency.setTargetAtTime(180 + impacto * 260, agora, 0.05);
   }
 
   function desligar() {
     if (!iniciado) return;
     const agora = contexto.currentTime;
     master.gain.cancelScheduledValues(agora);
+    master.gain.setValueAtTime(master.gain.value, agora);
     master.gain.linearRampToValueAtTime(0, agora + 0.35);
     ativo = false;
   }
