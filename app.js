@@ -1,5 +1,8 @@
+import * as THREE from 'three';
 import { criarCena } from './js/cena.js';
 import { criarAudioAmbiente } from './js/audio.js';
+
+globalThis.vetorSol = new THREE.Vector3();
 
 const canvas = document.querySelector('#cinema');
 const preloader = document.querySelector('#preloader');
