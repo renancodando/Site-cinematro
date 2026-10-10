@@ -20,6 +20,7 @@ let paginaVisivel = true;
 let resizeFrame;
 let progressoAtual = 0;
 let interfaceSuja = true;
+let capituloAtual = 1;
 
 function limitar(valor, minimo = 0, maximo = 1) {
   return Math.min(maximo, Math.max(minimo, valor));
@@ -65,6 +66,11 @@ function atualizarCapitulo() {
   });
 
   chapterIndex.textContent = String(atual).padStart(2, '0');
+
+  if (atual !== capituloAtual) {
+    capituloAtual = atual;
+    audio.marcarCapitulo(atual);
+  }
 }
 
 function atualizarInterface() {
@@ -129,7 +135,7 @@ audioButton.addEventListener('click', async () => {
   try {
     const ativo = await audio.alternar();
     audioButton.setAttribute('aria-pressed', String(ativo));
-    audioLabel.textContent = ativo ? 'mar ligado' : 'ouvir o mar';
+    audioLabel.textContent = ativo ? 'som ligado' : 'ouvir a cena';
   } catch {
     audioLabel.textContent = 'som indisponível';
     audioButton.disabled = true;
@@ -151,7 +157,7 @@ document.addEventListener('visibilitychange', () => {
   if (!paginaVisivel) {
     audio.desligar();
     audioButton.setAttribute('aria-pressed', 'false');
-    audioLabel.textContent = 'ouvir o mar';
+    audioLabel.textContent = 'ouvir a cena';
   }
 });
 
@@ -175,7 +181,7 @@ async function iniciar() {
     esconderPreloader();
     animar();
   } catch (erro) {
-    console.error('Não foi possível iniciar o oceano WebGL.', erro);
+    console.error('Não foi possível iniciar a experiência WebGL.', erro);
     falhaWebGL();
   }
 }
