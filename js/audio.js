@@ -47,6 +47,7 @@ export function criarAudioAmbiente() {
   let ativo = false;
   let iniciado = false;
   let ultimaAtualizacao = -1;
+  let ultimoCapitulo = 1;
 
   function iniciarNos() {
     const AudioContexto = window.AudioContext || window.webkitAudioContext;
@@ -69,6 +70,42 @@ export function criarAudioAmbiente() {
     fonte.start();
     iniciado = true;
     return true;
+  }
+
+  function tocarSino(indice) {
+    if (!iniciado || !ativo || !contexto || contexto.state !== 'running') return;
+
+    const agora = contexto.currentTime;
+    const frequenciaBase = 510 + (indice % 3) * 18;
+    const ganho = contexto.createGain();
+    const filtro = contexto.createBiquadFilter();
+    const sinoA = contexto.createOscillator();
+    const sinoB = contexto.createOscillator();
+
+    sinoA.type = 'sine';
+    sinoB.type = 'sine';
+    sinoA.frequency.setValueAtTime(frequenciaBase, agora);
+    sinoB.frequency.setValueAtTime(frequenciaBase * 1.495, agora);
+    sinoB.detune.setValueAtTime(-7, agora);
+
+    filtro.type = 'bandpass';
+    filtro.frequency.setValueAtTime(920, agora);
+    filtro.Q.setValueAtTime(0.72, agora);
+
+    ganho.gain.setValueAtTime(0.0001, agora);
+    ganho.gain.exponentialRampToValueAtTime(0.038, agora + 0.018);
+    ganho.gain.exponentialRampToValueAtTime(0.012, agora + 0.32);
+    ganho.gain.exponentialRampToValueAtTime(0.0001, agora + 1.25);
+
+    sinoA.connect(filtro);
+    sinoB.connect(filtro);
+    filtro.connect(ganho);
+    ganho.connect(master);
+
+    sinoA.start(agora);
+    sinoB.start(agora);
+    sinoA.stop(agora + 1.3);
+    sinoB.stop(agora + 1.3);
   }
 
   async function alternar() {
@@ -103,6 +140,12 @@ export function criarAudioAmbiente() {
     espuma.filtro.frequency.setTargetAtTime(1540 + nivelEspuma * 520, agora, 0.08);
   }
 
+  function marcarCapitulo(indice) {
+    if (indice === ultimoCapitulo) return;
+    ultimoCapitulo = indice;
+    tocarSino(indice);
+  }
+
   function desligar() {
     if (!iniciado) return;
     const agora = contexto.currentTime;
@@ -115,6 +158,7 @@ export function criarAudioAmbiente() {
   return {
     alternar,
     atualizar,
+    marcarCapitulo,
     desligar,
     get ativo() {
       return ativo;
