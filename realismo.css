@@ -1,6 +1,13 @@
 :root {
   --respiracao-foco: 0px;
-  --exposicao-cena: 0;
+  --brilho-cena: 1;
+  --contraste-cena: 1.03;
+  --saturacao-cena: .94;
+  --reflexo-cena: .12;
+  --halation-cena: .18;
+  --grao-cena: .045;
+  --vinheta-meio: .12;
+  --vinheta-borda: .38;
   --frieza-cena: 0;
   --abertura-cena: 0;
 }
@@ -22,31 +29,31 @@
 
 #cinema {
   filter:
-    brightness(calc(1 + var(--exposicao-cena)))
-    contrast(calc(1.03 + var(--frieza-cena) * .035))
-    saturate(calc(.94 - var(--frieza-cena) * .08 + var(--abertura-cena) * .08));
+    brightness(var(--brilho-cena))
+    contrast(var(--contraste-cena))
+    saturate(var(--saturacao-cena));
 }
 
 .reflexo-lente {
   z-index: 2;
-  opacity: calc(.12 + var(--abertura-cena) * .42);
+  opacity: var(--reflexo-cena);
   background:
-    radial-gradient(circle at 78% 34%, rgba(255, 231, 196, calc(var(--abertura-cena) * .12)), transparent 18%),
-    radial-gradient(circle at 21% 72%, rgba(164, 190, 202, calc(var(--frieza-cena) * .035)), transparent 22%);
+    radial-gradient(circle at 78% 34%, rgba(255, 231, 196, .055), transparent 18%),
+    radial-gradient(circle at 21% 72%, rgba(164, 190, 202, .02), transparent 22%);
   mix-blend-mode: screen;
 }
 
 .halation {
   z-index: 2;
-  opacity: calc(.18 + var(--abertura-cena) * .34);
+  opacity: var(--halation-cena);
   background:
-    radial-gradient(ellipse at 74% 52%, rgba(255, 196, 132, calc(var(--abertura-cena) * .07)), transparent 30%),
-    linear-gradient(180deg, rgba(255, 233, 203, .012), transparent 28%, transparent 76%, rgba(92, 111, 118, calc(var(--frieza-cena) * .018)));
+    radial-gradient(ellipse at 74% 52%, rgba(255, 196, 132, .05), transparent 30%),
+    linear-gradient(180deg, rgba(255, 233, 203, .012), transparent 28%, transparent 76%, rgba(92, 111, 118, .012));
   mix-blend-mode: screen;
 }
 
 .filme {
-  opacity: calc(.045 + var(--frieza-cena) * .018);
+  opacity: var(--grao-cena);
 }
 
 .vinheta {
@@ -54,8 +61,8 @@
     radial-gradient(
       ellipse at center,
       transparent 46%,
-      rgba(5, 6, 6, calc(.12 + var(--frieza-cena) * .045)) 74%,
-      rgba(3, 4, 4, calc(.38 - var(--abertura-cena) * .12)) 100%
+      rgba(5, 6, 6, var(--vinheta-meio)) 74%,
+      rgba(3, 4, 4, var(--vinheta-borda)) 100%
     ),
     linear-gradient(180deg, rgba(0, 0, 0, .055), transparent 18%, transparent 78%, rgba(0, 0, 0, .14));
 }
@@ -86,8 +93,8 @@ body::after {
 
 @media (max-width: 700px) {
   #lente { opacity: .72; }
-  .reflexo-lente { opacity: calc(.08 + var(--abertura-cena) * .26); }
-  .halation { opacity: calc(.12 + var(--abertura-cena) * .22); }
+  .reflexo-lente { opacity: .22; }
+  .halation { opacity: .24; }
 }
 
 @media (prefers-reduced-motion: reduce) {
