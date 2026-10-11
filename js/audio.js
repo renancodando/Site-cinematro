@@ -10,21 +10,44 @@ function ruido(contexto, segundos = 2.4) {
   return buffer;
 }
 
-function camada(contexto, fonte, master, tipo, frequencia, q, ganho) {
+function impulsoSala(contexto, duracao = .52, decaimento = 3.4) {
+  const tamanho = Math.floor(contexto.sampleRate * duracao);
+  const buffer = contexto.createBuffer(2, tamanho, contexto.sampleRate);
+  let semente = 9131;
+  const rnd = () => {
+    semente = (semente * 16807) % 2147483647;
+    return ((semente - 1) / 2147483646) * 2 - 1;
+  };
+  for (let canal = 0; canal < 2; canal++) {
+    const dados = buffer.getChannelData(canal);
+    for (let i = 0; i < tamanho; i++) {
+      const t = i / tamanho;
+      const envelope = Math.pow(1 - t, decaimento);
+      dados[i] = rnd() * envelope * (canal ? .88 : 1);
+    }
+  }
+  return buffer;
+}
+
+function camada(contexto, fonte, destino, tipo, frequencia, q, ganho) {
   const filtro = contexto.createBiquadFilter();
   filtro.type = tipo;
   filtro.frequency.value = frequencia;
   filtro.Q.value = q;
   const volume = contexto.createGain();
   volume.gain.value = ganho;
-  fonte.connect(filtro).connect(volume).connect(master);
+  fonte.connect(filtro).connect(volume).connect(destino);
   return { filtro, volume };
 }
 
 export function criarAudioAmbiente() {
   let contexto;
   let master;
+  let dry;
+  let wet;
+  let reverb;
   let fonte;
+  let bufferRuido;
   let sala;
   let trabalho;
   let exterior;
@@ -35,6 +58,7 @@ export function criarAudioAmbiente() {
   let ativo = false;
   let iniciado = false;
   let ultimoTick = -1;
+  let alternaTick = false;
   let ultimaAtualizacao = -1;
 
   function iniciarNos() {
@@ -44,10 +68,20 @@ export function criarAudioAmbiente() {
     contexto = new AudioContexto({ latencyHint: 'interactive' });
     master = contexto.createGain();
     master.gain.value = 0;
-    master.connect(contexto.destination);
 
+    dry = contexto.createGain();
+    dry.gain.value = .94;
+    wet = contexto.createGain();
+    wet.gain.value = .11;
+    reverb = contexto.createConvolver();
+    reverb.buffer = impulsoSala(contexto);
+
+    master.connect(dry).connect(contexto.destination);
+    master.connect(reverb).connect(wet).connect(contexto.destination);
+
+    bufferRuido = ruido(contexto);
     fonte = contexto.createBufferSource();
-    fonte.buffer = ruido(contexto);
+    fonte.buffer = bufferRuido;
     fonte.loop = true;
 
     sala = camada(contexto, fonte, master, 'lowpass', 720, .34, .025);
@@ -87,6 +121,25 @@ export function criarAudioAmbiente() {
     osc.connect(ganho).connect(master);
     osc.start(agora);
     osc.stop(agora + duracao + .01);
+  }
+
+  function tickRelogio(trabalhoNivel) {
+    if (!iniciado || !ativo || !bufferRuido) return;
+    const agora = contexto.currentTime;
+    alternaTick = !alternaTick;
+    const fonteTick = contexto.createBufferSource();
+    fonteTick.buffer = bufferRuido;
+    const filtro = contexto.createBiquadFilter();
+    filtro.type = 'bandpass';
+    filtro.frequency.value = (trabalhoNivel > .55 ? 1180 : 1540) * (alternaTick ? 1 : .89);
+    filtro.Q.value = 2.8;
+    const ganho = contexto.createGain();
+    ganho.gain.setValueAtTime(0, agora);
+    ganho.gain.linearRampToValueAtTime(trabalhoNivel > .55 ? .0055 : .0085, agora + .002);
+    ganho.gain.exponentialRampToValueAtTime(.0001, agora + .032);
+    fonteTick.connect(filtro).connect(ganho).connect(master);
+    fonteTick.start(agora, alternaTick ? .21 : .73, .045);
+    fonteTick.stop(agora + .05);
   }
 
   function sino(escritorio = false) {
@@ -139,15 +192,17 @@ export function criarAudioAmbiente() {
       sala.volume.gain.setTargetAtTime(.022 + (1 - trabalhoNivel) * .018, agora, .22);
       trabalho.volume.gain.setTargetAtTime(trabalhoNivel * .035 * (1 - abertura), agora, .22);
       trabalho.filtro.frequency.setTargetAtTime(1460 + trabalhoNivel * 520, agora, .28);
-      exterior.volume.gain.setTargetAtTime(abertura * .035, agora, .34);
+      exterior.volume.gain.setTargetAtTime(abertura * .038, agora, .34);
       humGain.gain.setTargetAtTime((.0045 + trabalhoNivel * .007) * (1 - abertura * .92), agora, .25);
       humGain2.gain.setTargetAtTime((.0015 + trabalhoNivel * .003) * (1 - abertura * .94), agora, .25);
+      wet.gain.setTargetAtTime(.12 - trabalhoNivel * .035 + abertura * .06, agora, .4);
+      dry.gain.setTargetAtTime(.94 + trabalhoNivel * .025 - abertura * .03, agora, .4);
     }
 
     const segundo = Math.floor(agora);
     if (segundo !== ultimoTick && abertura < .7) {
       ultimoTick = segundo;
-      toque(trabalhoNivel > .55 ? 1180 : 1460, .018, trabalhoNivel > .55 ? .006 : .009, 'square');
+      tickRelogio(trabalhoNivel);
     }
   }
 
