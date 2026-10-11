@@ -58,6 +58,8 @@ export function criarAudioAmbiente() {
   let ativo = false;
   let iniciado = false;
   let ultimoTick = -1;
+  let ultimoTeclado = -1;
+  let ultimoCorredor = -1;
   let alternaTick = false;
   let ultimaAtualizacao = -1;
 
@@ -123,23 +125,56 @@ export function criarAudioAmbiente() {
     osc.stop(agora + duracao + .01);
   }
 
-  function tickRelogio(trabalhoNivel) {
+  function transienteRuido(frequencia, q, duracao, volume, offset = .2) {
     if (!iniciado || !ativo || !bufferRuido) return;
     const agora = contexto.currentTime;
-    alternaTick = !alternaTick;
-    const fonteTick = contexto.createBufferSource();
-    fonteTick.buffer = bufferRuido;
+    const src = contexto.createBufferSource();
     const filtro = contexto.createBiquadFilter();
-    filtro.type = 'bandpass';
-    filtro.frequency.value = (trabalhoNivel > .55 ? 1180 : 1540) * (alternaTick ? 1 : .89);
-    filtro.Q.value = 2.8;
     const ganho = contexto.createGain();
+    src.buffer = bufferRuido;
+    filtro.type = 'bandpass';
+    filtro.frequency.value = frequencia;
+    filtro.Q.value = q;
     ganho.gain.setValueAtTime(0, agora);
-    ganho.gain.linearRampToValueAtTime(trabalhoNivel > .55 ? .0055 : .0085, agora + .002);
-    ganho.gain.exponentialRampToValueAtTime(.0001, agora + .032);
-    fonteTick.connect(filtro).connect(ganho).connect(master);
-    fonteTick.start(agora, alternaTick ? .21 : .73, .045);
-    fonteTick.stop(agora + .05);
+    ganho.gain.linearRampToValueAtTime(volume, agora + .002);
+    ganho.gain.exponentialRampToValueAtTime(.0001, agora + duracao);
+    src.connect(filtro).connect(ganho).connect(master);
+    src.start(agora, offset, Math.min(.08, duracao + .02));
+    src.stop(agora + duracao + .03);
+  }
+
+  function tickRelogio(trabalhoNivel) {
+    alternaTick = !alternaTick;
+    transienteRuido(
+      (trabalhoNivel > .55 ? 1180 : 1540) * (alternaTick ? 1 : .89),
+      2.8,
+      .032,
+      trabalhoNivel > .55 ? .0055 : .0085,
+      alternaTick ? .21 : .73
+    );
+  }
+
+  function cliqueTeclado(indice = 0) {
+    const tons = [2180, 2440, 1910, 2680];
+    transienteRuido(tons[indice % tons.length], 3.6, .024, .0038, .31 + (indice % 3) * .19);
+  }
+
+  function ruidoCorredor() {
+    if (!iniciado || !ativo) return;
+    const agora = contexto.currentTime;
+    const osc = contexto.createOscillator();
+    const ganho = contexto.createGain();
+    const filtro = contexto.createBiquadFilter();
+    osc.type = 'sine';
+    osc.frequency.value = 185 + Math.sin(agora * .43) * 12;
+    filtro.type = 'lowpass';
+    filtro.frequency.value = 520;
+    ganho.gain.setValueAtTime(.0001, agora);
+    ganho.gain.linearRampToValueAtTime(.0035, agora + .08);
+    ganho.gain.exponentialRampToValueAtTime(.0001, agora + .5);
+    osc.connect(filtro).connect(ganho).connect(master);
+    osc.start(agora);
+    osc.stop(agora + .54);
   }
 
   function sino(escritorio = false) {
@@ -192,17 +227,33 @@ export function criarAudioAmbiente() {
       sala.volume.gain.setTargetAtTime(.022 + (1 - trabalhoNivel) * .018, agora, .22);
       trabalho.volume.gain.setTargetAtTime(trabalhoNivel * .035 * (1 - abertura), agora, .22);
       trabalho.filtro.frequency.setTargetAtTime(1460 + trabalhoNivel * 520, agora, .28);
-      exterior.volume.gain.setTargetAtTime(abertura * .038, agora, .34);
+      exterior.volume.gain.setTargetAtTime(abertura * .04, agora, .34);
       humGain.gain.setTargetAtTime((.0045 + trabalhoNivel * .007) * (1 - abertura * .92), agora, .25);
       humGain2.gain.setTargetAtTime((.0015 + trabalhoNivel * .003) * (1 - abertura * .94), agora, .25);
-      wet.gain.setTargetAtTime(.12 - trabalhoNivel * .035 + abertura * .06, agora, .4);
-      dry.gain.setTargetAtTime(.94 + trabalhoNivel * .025 - abertura * .03, agora, .4);
+      wet.gain.setTargetAtTime(.12 - trabalhoNivel * .045 + abertura * .07, agora, .4);
+      dry.gain.setTargetAtTime(.94 + trabalhoNivel * .032 - abertura * .035, agora, .4);
     }
 
     const segundo = Math.floor(agora);
     if (segundo !== ultimoTick && abertura < .7) {
       ultimoTick = segundo;
       tickRelogio(trabalhoNivel);
+    }
+
+    if (trabalhoNivel > .58 && abertura < .42) {
+      const janelaTeclado = Math.floor(agora * 1.65);
+      if (janelaTeclado !== ultimoTeclado && janelaTeclado % 3 !== 0) {
+        ultimoTeclado = janelaTeclado;
+        cliqueTeclado(janelaTeclado);
+      }
+    }
+
+    if (trabalhoNivel < .22 && progresso > .08 && progresso < .42) {
+      const janelaCorredor = Math.floor(agora / 5.5);
+      if (janelaCorredor !== ultimoCorredor) {
+        ultimoCorredor = janelaCorredor;
+        ruidoCorredor();
+      }
     }
   }
 
