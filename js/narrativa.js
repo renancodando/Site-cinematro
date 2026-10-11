@@ -71,19 +71,13 @@ function medir() {
 function trocarTexto(el, texto) {
   if (el.textContent === texto) return;
   el.animate(
-    [
-      { opacity: getComputedStyle(el).opacity, transform: `${getComputedStyle(el).transform} translateY(0)` },
-      { opacity: 0, transform: `${getComputedStyle(el).transform} translateY(4px)` }
-    ],
-    { duration: 130, easing: 'ease-out', fill: 'forwards' }
+    [{ opacity: 1 }, { opacity: 0 }],
+    { duration: 120, easing: 'ease-out', fill: 'forwards' }
   ).finished.then(() => {
     el.textContent = texto;
     el.animate(
-      [
-        { opacity: 0, transform: 'translateY(-3px)' },
-        { opacity: 1, transform: 'translateY(0)' }
-      ],
-      { duration: 260, easing: 'cubic-bezier(.2,.75,.25,1)', fill: 'forwards' }
+      [{ opacity: 0 }, { opacity: 1 }],
+      { duration: 250, easing: 'cubic-bezier(.2,.75,.25,1)', fill: 'forwards' }
     );
   }).catch(() => {
     el.textContent = texto;
@@ -96,13 +90,17 @@ function atualizar() {
   const fase = fases[indice];
 
   const presencaFrente = Math.max(0, 1 - Math.abs(progresso - .56) / .58);
-  const opacidade = .08 + presencaFrente * .24;
+  const opacidadeBase = .08 + presencaFrente * .24;
+  const fatorMobile = innerWidth < 560 ? .5 : innerWidth < 820 ? .72 : 1;
+  const opacidade = opacidadeBase * fatorMobile;
   const frieza = limitar((progresso - .46) / .28);
   const saida = limitar((progresso - .86) / .14);
+  const saturacao = 1 - frieza * .38;
+  const opacidadeSaida = opacidade * (1 - saida * .82);
 
   raiz.style.setProperty('--narrativa-opacidade', opacidade.toFixed(3));
-  raiz.style.setProperty('--narrativa-fria', frieza.toFixed(3));
-  raiz.style.setProperty('--narrativa-saida', saida.toFixed(3));
+  raiz.style.setProperty('--narrativa-opacidade-saida', opacidadeSaida.toFixed(3));
+  raiz.style.setProperty('--narrativa-saturacao', saturacao.toFixed(3));
 
   if (indice === faseAtual) return;
   faseAtual = indice;
