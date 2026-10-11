@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#171716">
-  <meta name="description" content="ENTRE O SINAL E O PONTO — uma experiência cinematográfica sobre educação, trabalho, produtividade e liberdade.">
+  <meta name="description" content="ENTRE O SINAL E O PONTO — uma experiência cinematográfica sobre educação, trabalho, produtividade, mérito e liberdade.">
   <title>ENTRE O SINAL E O PONTO</title>
   <link rel="stylesheet" href="./style.css">
   <link rel="stylesheet" href="./realismo.css">
@@ -31,6 +31,12 @@
   <div class="reflexo-lente" aria-hidden="true"></div>
   <div class="halation" aria-hidden="true"></div>
 
+  <div id="sinaisAmbiente" class="sinais-ambiente" aria-hidden="true">
+    <span class="sinal-fisico sinal-fisico--principal" id="sinalPrincipal">SILÊNCIO DURANTE A AVALIAÇÃO</span>
+    <span class="sinal-fisico sinal-fisico--secundario" id="sinalSecundario">TEMPO · 50 MIN</span>
+    <span class="sinal-fisico sinal-fisico--terciario" id="sinalTerciario">RESULTADO DA TURMA</span>
+  </div>
+
   <header class="topo">
     <a class="marca" href="#inicio" aria-label="Voltar ao início">
       <span class="marca__linha" aria-hidden="true"></span>
@@ -52,54 +58,55 @@
   <main id="inicio">
     <section class="capitulo capitulo--abertura" data-capitulo="1">
       <div class="frase frase--esquerda">
-        <p class="hora">06:48 · sala vazia</p>
-        <h1>Disseram que aprender<br>era descobrir.</h1>
-        <p class="continua">Depois me deram um gabarito.</p>
+        <p class="hora">06:48 · antes da chamada</p>
+        <h1>Disseram que estudar<br>era abrir caminhos.</h1>
+        <p class="continua">Mas quase tudo aqui foi desenhado para alinhar passos.</p>
       </div>
     </section>
 
     <section class="capitulo" data-capitulo="2">
       <div class="frase frase--direita">
-        <p class="hora">07:31 · prova</p>
-        <h2>A mesma prova cai<br>sobre vidas que nunca<br>começaram do mesmo lugar.</h2>
+        <p class="hora">07:31 · primeira fileira</p>
+        <h2>A folha é igual<br>para todos.</h2>
+        <p class="continua">A vida nunca foi.</p>
       </div>
     </section>
 
     <section class="capitulo" data-capitulo="3">
       <div class="frase frase--esquerda">
-        <p class="hora">10:12 · silêncio</p>
+        <p class="hora">10:12 · a pergunta certa</p>
         <h2>Quando obedecer vale<br>mais que perguntar,</h2>
-        <p class="continua">a escola começa a parecer treinamento.</p>
+        <p class="continua">chamam de disciplina aquilo que também ensina a aceitar sem interromper.</p>
       </div>
     </section>
 
     <section class="capitulo" data-capitulo="4">
       <div class="frase frase--direita">
         <p class="hora">17:03 · o mesmo relógio</p>
-        <h2>O sinal toca.<br>Anos depois,<br>o ponto bate.</h2>
-        <p class="continua">O corpo aprende a mesma pressa.</p>
+        <h2>O sinal ensina<br>a correr.</h2>
+        <p class="continua">O ponto só continua a aula.</p>
       </div>
     </section>
 
     <section class="capitulo" data-capitulo="5">
       <div class="frase frase--esquerda">
         <p class="hora">18:46 · meta do dia</p>
-        <h2>Se o tempo só vale<br>quando vira produtividade,</h2>
-        <p class="continua">até aprender começa a parecer investimento em si mesmo.</p>
+        <h2>Quando o tempo vale<br>mais que a pessoa,</h2>
+        <p class="continua">aprender vira investimento. Viver vira desempenho.</p>
       </div>
     </section>
 
     <section class="capitulo capitulo--final" data-capitulo="6">
       <div class="frase frase--centro">
-        <p class="hora">amanhecer · porta aberta</p>
-        <h2>Conhecimento não deveria<br>ensinar você a caber no mundo.</h2>
-        <p class="continua continua--final">Deveria dar ferramentas para transformá-lo.</p>
+        <p class="hora">porta aberta · depois do expediente</p>
+        <h2>Conhecimento não deveria<br>fabricar adaptação.</h2>
+        <p class="continua continua--final">Deveria fabricar consciência, recusa e transformação.</p>
         <button id="restartButton" class="reiniciar" type="button">voltar para a primeira carteira</button>
       </div>
 
       <footer>
         <span>uma sala · dois sistemas · o mesmo relógio</span>
-        <span>Three.js · áudio procedural</span>
+        <span>Three.js · áudio procedural · narrativa ambiental</span>
       </footer>
     </section>
   </main>
@@ -110,5 +117,6 @@
 
   <script type="module" src="./app.js"></script>
   <script type="module" src="./js/realismo.js"></script>
+  <script type="module" src="./js/narrativa.js"></script>
 </body>
 </html>
