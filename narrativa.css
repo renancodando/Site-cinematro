@@ -1,7 +1,7 @@
 :root {
   --narrativa-opacidade: .18;
-  --narrativa-fria: 0;
-  --narrativa-saida: 0;
+  --narrativa-opacidade-saida: .03;
+  --narrativa-saturacao: 1;
 }
 
 .sinais-ambiente {
@@ -31,14 +31,14 @@
   line-height: 1.25;
   text-transform: uppercase;
   opacity: var(--narrativa-opacidade);
-  filter: saturate(calc(1 - var(--narrativa-fria) * .38));
+  filter: saturate(var(--narrativa-saturacao));
   transition:
     opacity 520ms ease,
     color 760ms ease,
     background 760ms ease,
-    transform 700ms cubic-bezier(.2,.75,.25,1);
+    filter 760ms ease;
   transform-origin: center;
-  will-change: transform, opacity;
+  will-change: opacity, filter;
 }
 
 .sinal-fisico::before,
@@ -88,15 +88,13 @@
 }
 
 .sinais-ambiente[data-fase="saida"] .sinal-fisico {
-  opacity: calc(var(--narrativa-opacidade) * .18);
-  transform: translateY(8px) scale(.97);
+  opacity: var(--narrativa-opacidade-saida);
 }
 
 @media (max-width: 820px) {
   .sinal-fisico {
     font-size: 7px;
     padding: 6px 9px 5px;
-    opacity: calc(var(--narrativa-opacidade) * .72);
   }
 
   .sinal-fisico--principal { right: 8vw; top: 20vh; }
@@ -106,7 +104,6 @@
 
 @media (max-width: 560px) {
   .sinal-fisico--terciario { display: none; }
-  .sinal-fisico { opacity: calc(var(--narrativa-opacidade) * .48); }
 }
 
 @media (prefers-reduced-motion: reduce) {
